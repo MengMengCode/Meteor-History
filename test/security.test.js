@@ -73,6 +73,12 @@ test('signed image URL works without exposing the signing key', async (t) => {
   const repositories = await fetch(`${baseUrl}/api/repositories`).then((value) => value.json());
   assert.match(repositories.profileCard.embedUrl, /[?&]sig=/);
   assert.equal((await fetch(repositories.profileCard.embedUrl)).status, 200);
+  const hostileTitleUrl = `${repositories.profileCard.embedUrl}&custom_title=${encodeURIComponent('<script>alert("xss")</script>')}`;
+  const hostileTitleResponse = await fetch(hostileTitleUrl);
+  const hostileTitleSvg = await hostileTitleResponse.text();
+  assert.equal(hostileTitleResponse.status, 200);
+  assert.match(hostileTitleResponse.headers.get('content-security-policy'), /sandbox/);
+  assert.doesNotMatch(hostileTitleSvg, /<script>|<\/script>/);
 });
 
 test('image endpoint blocks unapproved Referer hosts and rate-limit abuse', async (t) => {
@@ -86,6 +92,17 @@ test('image endpoint blocks unapproved Referer hosts and rate-limit abuse', asyn
   assert.equal((await fetch(url, { headers: { referer: 'https://github.com/owner/repo' } })).status, 200);
   assert.equal((await fetch(url)).status, 200);
   const limited = await fetch(url);
+  assert.equal(limited.status, 429);
+  assert.ok(limited.headers.get('retry-after'));
+});
+
+test('all HTTP routes are protected by the global request limiter', async (t) => {
+  const values = fixtures({ apiRateLimitPerMinute: 1 });
+  const { app } = createApp(values);
+  const baseUrl = await listen(app, t);
+
+  assert.equal((await fetch(`${baseUrl}/api/health`)).status, 200);
+  const limited = await fetch(`${baseUrl}/api/health`);
   assert.equal(limited.status, 429);
   assert.ok(limited.headers.get('retry-after'));
 });

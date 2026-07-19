@@ -51,6 +51,12 @@ test('profile SVG supports GitHub Readme Stats-style safe options', () => {
   assert.doesNotMatch(svg, /<svg x=/);
 });
 
+test('profile SVG contextually escapes a hostile custom title', () => {
+  const svg = renderProfileSvg(profile, { custom_title: '<script>alert("xss")</script>' });
+  assert.doesNotMatch(svg, /<script>|<\/script>/);
+  assert.match(svg, /&lt;script&gt;alert\(&quot;xss&quot;\)&lt;\/script&gt;/);
+});
+
 test('profile SVG supports stats-card layout controls', () => {
   const svg = renderProfileSvg(profile, {
     theme: 'dracula',

@@ -8,6 +8,7 @@ import { createWorkerSigner, hotlinkAllowed, rateLimit } from './security.js';
 import { runScheduledSync } from './sync.js';
 
 const repoPattern = /^[A-Za-z0-9_.-]+$/;
+const utf8Encoder = new TextEncoder();
 
 function validRepoPart(value) {
   return typeof value === 'string' && value.length <= 100 && repoPattern.test(value);
@@ -40,6 +41,13 @@ function json(value, status = 200, headers = {}) {
 
 function text(value, status = 200, headers = {}) {
   return new Response(value, { status, headers: { ...commonHeaders(), 'Content-Type': 'text/plain; charset=utf-8', ...headers } });
+}
+
+function svg(value) {
+  return new Response(utf8Encoder.encode(value), { headers: {
+    ...commonHeaders(), 'Content-Type': 'image/svg+xml; charset=utf-8', 'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
+    'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox", 'Cross-Origin-Resource-Policy': 'cross-origin',
+  } });
 }
 
 async function context(env) {
@@ -134,11 +142,7 @@ async function handleApi(request, env, executionContext) {
     if (!await signer.verify(owner, repo, url.searchParams.get('sig'))) return text('Invalid or missing image signature', 403);
     if (!hotlinkAllowed(request, config.embedAllowedHosts, config.embedHotlinkProtection)) return text('Image embedding is not allowed from this site', 403);
     const history = await getHistory(cache, config, owner, repo);
-    const svg = renderHistorySvg(history, Object.fromEntries(url.searchParams));
-    return new Response(svg, { headers: {
-      ...commonHeaders(), 'Content-Type': 'image/svg+xml; charset=utf-8', 'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
-      'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox", 'Cross-Origin-Resource-Policy': 'cross-origin',
-    } });
+    return svg(renderHistorySvg(history, Object.fromEntries(url.searchParams)));
   }
 
   const profileMatch = url.pathname.match(/^\/api\/profile\/([^/]+)\.svg$/);
@@ -152,11 +156,7 @@ async function handleApi(request, env, executionContext) {
     const repositories = (cached?.repositories || []).filter((repository) => repository.owner.toLowerCase() === owner.toLowerCase() && (config.includePrivateRepositories || !repository.private));
     if (!repositories.length) return text('GitHub profile is not available', 404);
     if (!cached?.profileStats) return text('GitHub profile stats are still being prepared', 503);
-    const svg = renderProfileSvg({ owner: cached?.profile?.login || repositories[0].owner, stats: cached.profileStats, updatedAtLabel: formatUtc(cached.fetchedAt) }, Object.fromEntries(url.searchParams));
-    return new Response(svg, { headers: {
-      ...commonHeaders(), 'Content-Type': 'image/svg+xml; charset=utf-8', 'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
-      'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox", 'Cross-Origin-Resource-Policy': 'cross-origin',
-    } });
+    return svg(renderProfileSvg({ owner: cached?.profile?.login || repositories[0].owner, stats: cached.profileStats, updatedAtLabel: formatUtc(cached.fetchedAt) }, Object.fromEntries(url.searchParams)));
   }
 
   return json({ error: 'Not found', code: 'NOT_FOUND' }, 404);

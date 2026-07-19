@@ -1,13 +1,15 @@
 import fs from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 function cacheName(owner, repo) {
-  return `${owner}__${repo}`.toLowerCase().replace(/[^a-z0-9_.-]/g, '_') + '.json';
+  const key = JSON.stringify([String(owner).toLowerCase(), String(repo).toLowerCase()]);
+  return `${createHash('sha256').update(key).digest('hex')}.json`;
 }
 
 export class FileCache {
   constructor(directory, ttlMs) {
-    this.directory = directory;
+    this.directory = path.resolve(directory);
     this.ttlMs = ttlMs;
   }
 
@@ -16,7 +18,10 @@ export class FileCache {
   }
 
   file(owner, repo) {
-    return path.join(this.directory, cacheName(owner, repo));
+    const fileName = path.basename(cacheName(owner, repo));
+    const target = path.resolve(this.directory, fileName);
+    if (path.dirname(target) !== this.directory) throw new Error('Invalid cache file path.');
+    return target;
   }
 
   repositoriesFile() {

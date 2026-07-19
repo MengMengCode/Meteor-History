@@ -16,33 +16,6 @@ export function createEmbedSigner(secret = '') {
   };
 }
 
-export function createRateLimiter({ max = 120, windowMs = 60_000, responseType = 'json' } = {}) {
-  const requests = new Map();
-  let lastCleanup = Date.now();
-  return function rateLimit(req, res, next) {
-    const now = Date.now();
-    if (now - lastCleanup >= windowMs) {
-      for (const [key, entry] of requests) if (entry.resetAt <= now) requests.delete(key);
-      lastCleanup = now;
-    }
-    const key = req.ip || req.socket.remoteAddress || 'unknown';
-    let entry = requests.get(key);
-    if (!entry || entry.resetAt <= now) entry = { count: 0, resetAt: now + windowMs };
-    entry.count += 1;
-    requests.set(key, entry);
-    const remaining = Math.max(0, max - entry.count);
-    res.set({
-      'RateLimit-Limit': String(max),
-      'RateLimit-Remaining': String(remaining),
-      'RateLimit-Reset': String(Math.ceil(entry.resetAt / 1000)),
-    });
-    if (entry.count <= max) return next();
-    res.set('Retry-After', String(Math.ceil((entry.resetAt - now) / 1000)));
-    if (responseType === 'text') return res.status(429).type('text').send('Too many image requests');
-    return res.status(429).json({ error: 'Too many requests. Try again shortly.', code: 'RATE_LIMITED' });
-  };
-}
-
 function hostMatches(host, pattern) {
   if (pattern.startsWith('*.')) return host === pattern.slice(2) || host.endsWith(`.${pattern.slice(2)}`);
   return host === pattern;

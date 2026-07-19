@@ -1,9 +1,10 @@
 import express from 'express';
+import { rateLimit } from 'express-rate-limit';
 import path from 'node:path';
 import { GitHubError } from './github.js';
 import { renderHistorySvg } from './svg.js';
 import { formatServerDateTime, serverTimeZone } from './time.js';
-import { createEmbedSigner, createHotlinkGuard, createRateLimiter, securityHeaders } from './security.js';
+import { createEmbedSigner, createHotlinkGuard, securityHeaders } from './security.js';
 import { renderProfileSvg } from './profile-svg.js';
 
 const repoPattern = /^[A-Za-z0-9_.-]+$/;
@@ -12,19 +13,43 @@ function validRepoPart(value) {
   return typeof value === 'string' && value.length <= 100 && repoPattern.test(value);
 }
 
+function sendSvg(res, svg, headers = {}) {
+  const body = Buffer.from(svg, 'utf8');
+  return res.status(200).set({
+    'Content-Type': 'image/svg+xml; charset=utf-8',
+    'Content-Length': String(body.byteLength),
+    'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
+    'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+    'X-Content-Type-Options': 'nosniff',
+    ...headers,
+  }).end(body);
+}
+
 export function createApp({ config, cache, sync }) {
   const app = express();
   const embedSigner = createEmbedSigner(config.embedSigningKey);
-  const apiRateLimit = createRateLimiter({ max: config.apiRateLimitPerMinute || 240 });
-  const embedRateLimit = createRateLimiter({ max: config.embedRateLimitPerMinute || 120, responseType: 'text' });
+  const apiRateLimit = rateLimit({
+    windowMs: 60_000,
+    limit: config.apiRateLimitPerMinute || 240,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    handler: (_req, res) => res.status(429).json({ error: 'Too many requests. Try again shortly.', code: 'RATE_LIMITED' }),
+  });
+  const embedRateLimit = rateLimit({
+    windowMs: 60_000,
+    limit: config.embedRateLimitPerMinute || 120,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    handler: (_req, res) => res.status(429).type('text').send('Too many image requests'),
+  });
   const hotlinkGuard = config.embedHotlinkProtection === false
     ? (_req, _res, next) => next()
     : createHotlinkGuard(config.embedAllowedHosts || []);
   app.disable('x-powered-by');
   if (config.trustProxy) app.set('trust proxy', 1);
   app.use(securityHeaders);
+  app.use(apiRateLimit);
   app.use(express.json({ limit: '10kb' }));
-  app.use('/api', (req, res, next) => req.path.startsWith('/embed/') ? next() : apiRateLimit(req, res, next));
 
   async function getHistory(owner, repo) {
     const repositoryIndex = await cache.getRepositories();
@@ -104,12 +129,7 @@ export function createApp({ config, cache, sync }) {
       if (!embedSigner.verify(owner, repo, req.query.sig)) return res.status(403).type('text').send('Invalid or missing image signature');
       const history = await getHistory(owner, repo);
       const svg = renderHistorySvg(history, req.query);
-      res.set({
-        'Content-Type': 'image/svg+xml; charset=utf-8',
-        'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
-        'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
-        'X-Content-Type-Options': 'nosniff',
-      }).send(svg);
+      sendSvg(res, svg);
     } catch (error) {
       next(error);
     }
@@ -132,12 +152,7 @@ export function createApp({ config, cache, sync }) {
         stats: cached?.profileStats,
         updatedAtLabel: formatServerDateTime(cached?.fetchedAt),
       }, req.query);
-      res.set({
-        'Content-Type': 'image/svg+xml; charset=utf-8',
-        'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
-        'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
-        'Cross-Origin-Resource-Policy': 'cross-origin',
-      }).send(svg);
+      sendSvg(res, svg, { 'Cross-Origin-Resource-Policy': 'cross-origin' });
     } catch (error) {
       next(error);
     }

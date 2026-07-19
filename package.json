@@ -15,7 +15,9 @@
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
     "dotenv": "latest",
+    "escape-html": "^1.0.3",
     "express": "latest",
+    "express-rate-limit": "^8.6.0",
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",

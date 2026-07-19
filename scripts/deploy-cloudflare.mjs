@@ -72,8 +72,16 @@ try {
   const output = await runWrangler();
   if (!dryRun) {
     const url = deploymentUrl(output);
-    if (url) await bootstrap(url);
-    else console.warn('Deployment succeeded, but no public Worker URL was found. The one-minute Cron Trigger will start synchronization.');
+    if (url) {
+      try {
+        await bootstrap(url);
+      } catch (error) {
+        console.warn(`Deployment succeeded, but the initial synchronization probe could not reach the Worker: ${error.message}`);
+        console.warn('The first public request or the one-minute Cron Trigger will start synchronization instead.');
+      }
+    } else {
+      console.warn('Deployment succeeded, but no public Worker URL was found. The one-minute Cron Trigger will start synchronization.');
+    }
   }
 } catch (error) {
   console.error(error.message);

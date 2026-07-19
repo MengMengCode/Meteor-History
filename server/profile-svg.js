@@ -1,4 +1,6 @@
-const escapeXml = (value) => String(value ?? '').replace(/[<>&"']/g, (char) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[char]));
+import escapeHtml from 'escape-html';
+
+const escapeXml = (value) => escapeHtml(String(value ?? ''));
 
 // Popular presets from anuraghazra/github-readme-stats, with a practical border
 // color for themes that do not define one upstream.
