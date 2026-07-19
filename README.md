@@ -32,6 +32,20 @@ Meteor History is a self-hosted GitHub repository gallery and SVG card service. 
 
 ## Deployment
 
+### One-click Linux installation
+
+Run the interactive installer as root:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MengMengCode/Meteor-History/main/deploy.sh | sudo sh
+```
+
+The installer detects x86_64 or ARM64 on Linux with glibc 2.28 or later, downloads the matching self-contained runtime from the latest GitHub Release, verifies its SHA-256 checksum, and installs a systemd or OpenRC service. Node.js and Docker are not required on the host. It asks for the fine-grained GitHub token, the public HTTPS URL, and whether image hotlink protection should be enabled for GitHub and the deployment site. The token is stored in a root-only environment file and is never added to the command line.
+
+When hotlink protection is enabled, SVG requests carrying a Referer are accepted only from GitHub hosts or the deployment itself. Same-origin previews on the web interface continue to work. Requests without a Referer remain available for GitHub's image proxy, while signed URLs and per-client rate limiting reduce abuse.
+
+The public URL must already point to the server through a trusted HTTPS reverse proxy. The one-click service listens on `127.0.0.1:8666` so the application port is not exposed directly.
+
 ### Docker image
 
 Replace `github_pat_xxx` and the example public URL, then run:
@@ -92,6 +106,8 @@ docker compose ps
 | `GITHUB_TOKEN` | Yes | None | Fine-grained GitHub token used by scheduled background synchronization. |
 | `EMBED_SIGNING_KEY` | Yes | None | Secret used to sign image URLs. It must contain at least 32 characters. |
 | `PUBLIC_BASE_URL` | No | Request origin | Public HTTPS origin used in generated image URLs and Markdown. |
+| `CACHE_DIR` | No | `.cache` | Directory used for persistent repository and star history JSON. |
+| `HOST` | No | `0.0.0.0` | Network interface used by the application listener. |
 | `PORT` | No | `8666` in Docker | Application port inside the container. |
 | `HOST_PORT` | No | `8666` | Host port used by `compose.yaml`. |
 | `METEOR_IMAGE` | No | GHCR latest image | Container image used by `compose.yaml`. |
@@ -100,6 +116,7 @@ docker compose ps
 | `GITHUB_API_VERSION` | No | `2026-03-10` | GitHub REST API version used by the server. |
 | `EMBED_RATE_LIMIT_PER_MINUTE` | No | `120` | Maximum SVG requests per client each minute. |
 | `API_RATE_LIMIT_PER_MINUTE` | No | `240` | Maximum JSON API requests per client each minute. |
+| `EMBED_HOTLINK_PROTECTION` | No | `true` | Enables Referer validation for SVG image endpoints. |
 | `EMBED_ALLOWED_HOSTS` | No | GitHub hosts | Comma-separated Referer allowlist for SVG images. |
 | `TRUST_PROXY` | No | `false` | Trusts the first reverse proxy hop when enabled. |
 | `INCLUDE_PRIVATE_REPOSITORIES` | No | `false` | Includes private repository metadata and charts when enabled. |

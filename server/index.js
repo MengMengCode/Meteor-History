@@ -17,8 +17,8 @@ const sync = new BackgroundSync({
 });
 const { app } = createApp({ config, cache, sync });
 
-const server = app.listen(config.port, () => {
-  console.log(`Meteor History is running at http://localhost:${config.port}`);
+const server = app.listen(config.port, config.host, () => {
+  console.log(`Meteor History is running at http://${config.host}:${config.port}`);
   if (!config.token) console.warn('GITHUB_TOKEN is not configured. Copy .env.example to .env and add a fine-grained token.');
 });
 sync.start();

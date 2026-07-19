@@ -12,6 +12,10 @@ function enabled(value) {
   return ['1', 'true', 'yes', 'on'].includes(String(value || '').toLowerCase());
 }
 
+function enabledByDefault(value) {
+  return !['0', 'false', 'no', 'off'].includes(String(value ?? '').toLowerCase());
+}
+
 function list(value) {
   return String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
 }
@@ -19,7 +23,8 @@ function list(value) {
 export const config = {
   rootDir,
   distDir: path.join(rootDir, 'dist'),
-  cacheDir: path.join(rootDir, '.cache'),
+  cacheDir: process.env.CACHE_DIR ? path.resolve(process.env.CACHE_DIR) : path.join(rootDir, '.cache'),
+  host: process.env.HOST || '0.0.0.0',
   port: positiveNumber(process.env.PORT, 3000),
   token: process.env.GITHUB_TOKEN || process.env.GITHUB_PAT || '',
   apiVersion: process.env.GITHUB_API_VERSION || '2026-03-10',
@@ -30,7 +35,8 @@ export const config = {
   embedSigningKey: process.env.EMBED_SIGNING_KEY || '',
   embedRateLimitPerMinute: positiveNumber(process.env.EMBED_RATE_LIMIT_PER_MINUTE, 120),
   apiRateLimitPerMinute: positiveNumber(process.env.API_RATE_LIMIT_PER_MINUTE, 240),
-  embedAllowedHosts: list(process.env.EMBED_ALLOWED_HOSTS || 'github.com,*.githubusercontent.com,*.github.io'),
+  embedHotlinkProtection: enabledByDefault(process.env.EMBED_HOTLINK_PROTECTION),
+  embedAllowedHosts: list(process.env.EMBED_ALLOWED_HOSTS ?? 'github.com,*.githubusercontent.com,*.github.io'),
   trustProxy: enabled(process.env.TRUST_PROXY),
   isProduction: process.env.NODE_ENV === 'production' || process.env.npm_lifecycle_event === 'start',
   includePrivateRepositories: enabled(process.env.INCLUDE_PRIVATE_REPOSITORIES),

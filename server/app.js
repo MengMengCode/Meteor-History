@@ -17,7 +17,9 @@ export function createApp({ config, cache, sync }) {
   const embedSigner = createEmbedSigner(config.embedSigningKey);
   const apiRateLimit = createRateLimiter({ max: config.apiRateLimitPerMinute || 240 });
   const embedRateLimit = createRateLimiter({ max: config.embedRateLimitPerMinute || 120, responseType: 'text' });
-  const hotlinkGuard = createHotlinkGuard(config.embedAllowedHosts || []);
+  const hotlinkGuard = config.embedHotlinkProtection === false
+    ? (_req, _res, next) => next()
+    : createHotlinkGuard(config.embedAllowedHosts || []);
   app.disable('x-powered-by');
   if (config.trustProxy) app.set('trust proxy', 1);
   app.use(securityHeaders);

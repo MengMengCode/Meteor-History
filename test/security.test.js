@@ -90,6 +90,18 @@ test('image endpoint blocks unapproved Referer hosts and rate-limit abuse', asyn
   assert.ok(limited.headers.get('retry-after'));
 });
 
+test('image hotlink protection can be disabled explicitly', async (t) => {
+  const values = fixtures({ embedHotlinkProtection: false });
+  const { app } = createApp(values);
+  const baseUrl = await listen(app, t);
+  const signature = createEmbedSigner(values.config.embedSigningKey).sign('owner', 'repo');
+  const response = await fetch(`${baseUrl}/api/embed/owner/repo.svg?sig=${signature}`, {
+    headers: { referer: 'https://external.example/page' },
+  });
+
+  assert.equal(response.status, 200);
+});
+
 test('production configuration requires independent secrets and HTTPS', () => {
   assert.throws(() => validateConfig({ nodeEnv: 'production', token: '', embedSigningKey: '', publicBaseUrl: '' }), /GITHUB_TOKEN/);
   assert.throws(() => validateConfig({ nodeEnv: 'production', token: 'token', embedSigningKey: '', publicBaseUrl: '' }), /EMBED_SIGNING_KEY/);
