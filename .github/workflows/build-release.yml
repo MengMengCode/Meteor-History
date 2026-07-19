@@ -144,6 +144,7 @@ jobs:
           cp -R server dist node_modules "$package_root/app/"
           cp src/monotonePath.js "$package_root/app/src/"
           cp package.json package-lock.json "$package_root/app/"
+          cp scripts/meteor-history-cli.sh "$package_root/bin/meteor-history-cli"
           printf '%s\n' "$GITHUB_REF_NAME" > "$package_root/VERSION"
           cat > "$package_root/bin/meteor-history" <<'LAUNCHER'
           #!/bin/sh
@@ -151,7 +152,7 @@ jobs:
           package_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
           exec "$package_root/runtime/node" "$package_root/app/server/index.js"
           LAUNCHER
-          chmod 755 "$package_root/bin/meteor-history" "$package_root/runtime/node"
+          chmod 755 "$package_root/bin/meteor-history" "$package_root/bin/meteor-history-cli" "$package_root/runtime/node"
           tar -C "$package_root" -czf "$release_root/meteor-history-linux-$RELEASE_ARCH.tar.gz" .
 
       - name: Smoke test portable runtime
@@ -212,5 +213,5 @@ jobs:
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" release/* --clobber
           else
-            gh release create "$GITHUB_REF_NAME" release/* --verify-tag --generate-notes --title "Meteor History $GITHUB_REF_NAME"
+            gh release create "$GITHUB_REF_NAME" release/* --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
           fi

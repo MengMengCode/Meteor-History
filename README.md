@@ -46,6 +46,20 @@ When hotlink protection is enabled, SVG requests carrying a Referer are accepted
 
 The public URL must already point to the server through a trusted HTTPS reverse proxy. The one-click service listens on `127.0.0.1:8666` so the application port is not exposed directly.
 
+After installation, open the management menu with:
+
+```bash
+meteor-history
+```
+
+The menu can change the GitHub token, update to the latest Release, or uninstall the service. The same actions are also available directly:
+
+```bash
+meteor-history key
+meteor-history update
+meteor-history uninstall
+```
+
 ### Docker image
 
 Replace `github_pat_xxx` and the example public URL, then run:

@@ -9,6 +9,7 @@ ENVIRONMENT_FILE="$ENVIRONMENT_DIR/meteor-history.env"
 STATE_DIRECTORY="/var/lib/meteor-history"
 SERVICE_USER="meteor-history"
 SERVICE_NAME="meteor-history"
+COMMAND_LINK="/usr/local/bin/meteor-history"
 TTY_DEVICE="/dev/tty"
 
 say() {
@@ -26,6 +27,14 @@ fi
 
 if [ ! -r "$TTY_DEVICE" ]; then
   fail "an interactive terminal is required"
+fi
+
+if [ -e "$COMMAND_LINK" ] || [ -L "$COMMAND_LINK" ]; then
+  EXISTING_COMMAND_TARGET=$(readlink "$COMMAND_LINK" 2>/dev/null || true)
+  case "$EXISTING_COMMAND_TARGET" in
+    "$INSTALL_ROOT"/*) ;;
+    *) fail "$COMMAND_LINK already exists and is not managed by Meteor History" ;;
+  esac
 fi
 
 install_dependencies() {
@@ -267,6 +276,7 @@ EXTRACT_DIRECTORY="$TEMP_DIRECTORY/extracted"
 mkdir -p "$EXTRACT_DIRECTORY"
 tar -xzf "$TEMP_DIRECTORY/$ASSET" -C "$EXTRACT_DIRECTORY"
 [ -x "$EXTRACT_DIRECTORY/bin/meteor-history" ] || fail "the release package is missing its launcher"
+[ -x "$EXTRACT_DIRECTORY/bin/meteor-history-cli" ] || fail "the release package is missing its management command"
 [ -x "$EXTRACT_DIRECTORY/runtime/node" ] || fail "the release package is missing its runtime"
 [ -f "$EXTRACT_DIRECTORY/VERSION" ] || fail "the release package is missing version metadata"
 VERSION=$(tr -d '\r\n' <"$EXTRACT_DIRECTORY/VERSION")
@@ -279,12 +289,15 @@ install -d -m 750 -o "$SERVICE_USER" -g "$SERVICE_USER" "$STATE_DIRECTORY" "$STA
 TARGET_DIRECTORY="$INSTALL_ROOT/releases/$VERSION-$ARCHITECTURE"
 if [ -d "$TARGET_DIRECTORY" ]; then
   [ -x "$TARGET_DIRECTORY/bin/meteor-history" ] || fail "the existing $VERSION installation is incomplete"
+  [ -x "$TARGET_DIRECTORY/bin/meteor-history-cli" ] || fail "the existing $VERSION management command is incomplete"
   [ -x "$TARGET_DIRECTORY/runtime/node" ] || fail "the existing $VERSION runtime is incomplete"
 else
   mv "$EXTRACT_DIRECTORY" "$TARGET_DIRECTORY"
   chown -R root:root "$TARGET_DIRECTORY"
 fi
 ln -sfn "releases/$VERSION-$ARCHITECTURE" "$INSTALL_ROOT/current"
+install -d -m 755 /usr/local/bin
+ln -sfn "$INSTALL_ROOT/current/bin/meteor-history-cli" "$COMMAND_LINK"
 write_environment
 
 if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
@@ -299,6 +312,7 @@ fi
 verify_running_service
 
 say "Meteor History $VERSION is running on port 8666."
+say "Run 'meteor-history' to open the management menu."
 say "Configure DNS and an HTTPS reverse proxy for $PUBLIC_BASE_URL if they are not already available."
 if [ "$EMBED_HOTLINK_PROTECTION" = "true" ]; then
   say "Image Referers are restricted to GitHub hosts; same-origin web previews remain available."
