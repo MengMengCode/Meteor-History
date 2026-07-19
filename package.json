@@ -7,6 +7,8 @@
     "dev": "concurrently -k \"vite\" \"node --watch server/index.js\"",
     "build": "vite build",
     "start": "node server/index.js",
+    "cf:dev": "npm run build && wrangler dev",
+    "deploy": "wrangler deploy",
     "test": "node --test",
     "check": "npm run test && npm run build"
   },
@@ -19,9 +21,23 @@
     "react-dom": "latest",
     "xkcd-font": "^1.0.1"
   },
+  "cloudflare": {
+    "bindings": {
+      "GITHUB_TOKEN": {
+        "description": "Create a [fine-grained GitHub token](https://github.com/settings/personal-access-tokens/new) for one resource owner with only Repository permissions > Metadata: Read-only."
+      },
+      "EMBED_SIGNING_KEY": {
+        "description": "Enter a unique random string containing at least 32 characters. It signs public SVG URLs and must not be shared."
+      },
+      "PUBLIC_BASE_URL": {
+        "description": "Optional public HTTPS origin. Leave empty to use the Worker request origin; hotlink protection will then remain disabled."
+      }
+    }
+  },
   "devDependencies": {
     "@vitejs/plugin-react": "latest",
     "concurrently": "latest",
-    "vite": "latest"
+    "vite": "latest",
+    "wrangler": "^4.112.0"
   }
 }

@@ -5,8 +5,8 @@
 <h1 align="center">Meteor History</h1>
 
 <p align="center">
-  <a href="https://github.com/MengMengCode/meteor-history/actions/workflows/build-release.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/MengMengCode/meteor-history/build-release.yml?branch=main&style=flat-square&label=Build"></a>
-  <a href="https://github.com/MengMengCode/meteor-history/releases"><img alt="Release" src="https://img.shields.io/github/v/release/MengMengCode/meteor-history?style=flat-square&label=Release"></a>
+  <a href="https://github.com/MengMengCode/Meteor-History/actions/workflows/build-release.yml"><img alt="Build" src="https://github.com/MengMengCode/Meteor-History/actions/workflows/build-release.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/MengMengCode/Meteor-History/releases"><img alt="Release" src="https://img.shields.io/github/v/release/MengMengCode/Meteor-History?display_name=tag&amp;sort=semver&amp;style=flat-square&amp;label=Release"></a>
   <img alt="Docker" src="https://img.shields.io/badge/Docker-GHCR-2496ED?style=flat-square&logo=docker&logoColor=white">
 </p>
 
@@ -32,6 +32,19 @@ Meteor History is a self-hosted GitHub repository gallery and SVG card service. 
 
 ## Deployment
 
+### Cloudflare Workers
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/MengMengCode/Meteor-History)
+
+The deployment flow creates a Worker, provisions a KV namespace for persistent JSON data, uploads the frontend as Workers Static Assets, and configures scheduled background synchronization. Enter the following secrets when Cloudflare asks for bindings:
+
+- `GITHUB_TOKEN`: a fine-grained GitHub token with only **Metadata → Read-only** access.
+- `EMBED_SIGNING_KEY`: a unique random value containing at least 32 characters.
+
+`PUBLIC_BASE_URL` is optional. Leave it empty to generate links from the Worker request origin; image hotlink protection is then forced off. When it is set, `EMBED_HOTLINK_PROTECTION` can be enabled and `EMBED_ALLOWED_HOSTS` can be customized in the Worker variables.
+
+The Cron Trigger wakes every five minutes and performs synchronization only when the six-hour refresh interval has elapsed. A new deployment therefore begins its first scheduled synchronization within approximately five minutes without a visitor-triggered GitHub request.
+
 ### One-click Linux installation
 
 Run the interactive installer as root:
@@ -40,11 +53,13 @@ Run the interactive installer as root:
 curl -fsSL https://raw.githubusercontent.com/MengMengCode/Meteor-History/main/deploy.sh | sudo sh
 ```
 
-The installer detects x86_64 or ARM64 on Linux with glibc 2.28 or later, downloads the matching self-contained runtime from the latest GitHub Release, verifies its SHA-256 checksum, and installs a systemd or OpenRC service. Node.js and Docker are not required on the host. It asks for the fine-grained GitHub token, the public HTTPS URL, and whether image hotlink protection should be enabled for GitHub and the deployment site. The token is stored in a root-only environment file and is never added to the command line.
+The installer detects x86_64 or ARM64 on Linux with glibc 2.28 or later, downloads the matching self-contained runtime from the latest GitHub Release, verifies its SHA-256 checksum, and installs a systemd or OpenRC service. Node.js and Docker are not required on the host. It asks for the fine-grained GitHub token and an optional public HTTPS URL. If a public URL is configured, it also asks whether image hotlink protection should be enabled for GitHub and the deployment site. The token is stored in a root-only environment file and is never added to the command line.
 
 When hotlink protection is enabled, SVG requests carrying a Referer are accepted only from GitHub hosts or the deployment itself. Same-origin previews on the web interface continue to work. Requests without a Referer remain available for GitHub's image proxy, while signed URLs and per-client rate limiting reduce abuse.
 
-The public URL must already point to the server through a trusted HTTPS reverse proxy. The one-click service listens on `127.0.0.1:8666` so the application port is not exposed directly.
+Leaving the public URL empty makes generated links use the current request origin and automatically disables image hotlink protection.
+
+When provided, the public URL must point to the server through a trusted HTTPS reverse proxy. The one-click service listens on `127.0.0.1:8666` so the application port is not exposed directly.
 
 After installation, open the management menu with:
 
@@ -62,26 +77,42 @@ meteor-history uninstall
 
 ### Docker image
 
-Replace `github_pat_xxx` and the example public URL, then run:
+Create a `compose.yaml` file. Replace the required token and signing key before starting it; every adjustable setting is documented beside the value:
+
+```yaml
+name: meteor-history # Compose project name
+
+services:
+  meteor-history:
+    image: ghcr.io/mengmengcode/meteor-history:latest # Image tag; pin a release tag for reproducible deployments
+    container_name: meteor-history # Container name shown by Docker
+    restart: unless-stopped # Restart policy
+    ports:
+      - "8666:8666" # Host port:container port
+    volumes:
+      - meteor-history-cache:/app/.cache # Persistent repository and star-history JSON
+    environment:
+      GITHUB_TOKEN: "github_pat_xxx" # Required: fine-grained token with Metadata read access
+      EMBED_SIGNING_KEY: "replace-with-at-least-32-random-characters" # Required: signs image URLs
+      PUBLIC_BASE_URL: "" # Optional: public HTTPS origin; empty uses the request origin and disables hotlink protection
+      PORT: "8666" # Internal HTTP port
+      CACHE_TTL_MINUTES: "360" # Minutes before cached JSON is considered stale
+      REFRESH_INTERVAL_MINUTES: "360" # Minutes between scheduled GitHub synchronization runs
+      EMBED_RATE_LIMIT_PER_MINUTE: "120" # SVG requests allowed per client each minute
+      API_RATE_LIMIT_PER_MINUTE: "240" # JSON API requests allowed per client each minute
+      EMBED_HOTLINK_PROTECTION: "false" # Enable only when PUBLIC_BASE_URL is configured
+      EMBED_ALLOWED_HOSTS: "github.com,*.githubusercontent.com,*.github.io" # Allowed Referer hosts when protection is enabled
+      TRUST_PROXY: "false" # Set true only behind a trusted reverse proxy
+      INCLUDE_PRIVATE_REPOSITORIES: "false" # Keep false for public deployments
+
+volumes:
+  meteor-history-cache: # Docker-managed persistent volume
+```
+
+Start the deployment from the directory containing the file:
 
 ```bash
-docker run -d \
-  --name meteor-history \
-  --restart unless-stopped \
-  -p 8666:8666 \
-  -v meteor-history-cache:/app/.cache \
-  -e "GITHUB_TOKEN=github_pat_xxx" \
-  -e "EMBED_SIGNING_KEY=$(openssl rand -hex 32)" \
-  -e "PUBLIC_BASE_URL=https://stars.example.com" \
-  -e "PORT=8666" \
-  -e "CACHE_TTL_MINUTES=360" \
-  -e "REFRESH_INTERVAL_MINUTES=360" \
-  -e "EMBED_RATE_LIMIT_PER_MINUTE=120" \
-  -e "API_RATE_LIMIT_PER_MINUTE=240" \
-  -e "EMBED_ALLOWED_HOSTS=github.com,*.githubusercontent.com,*.github.io,stars.example.com,*.stars.example.com" \
-  -e "TRUST_PROXY=false" \
-  -e "INCLUDE_PRIVATE_REPOSITORIES=false" \
-  ghcr.io/mengmengcode/meteor-history:latest
+docker compose up -d
 ```
 
 The application listens on port `8666`. Generated JSON is stored in the `meteor-history-cache` Docker volume.

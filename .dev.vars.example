@@ -1,0 +1,5 @@
+# Fine-grained GitHub token with Metadata: Read-only access.
+GITHUB_TOKEN=
+
+# Generate a unique random value containing at least 32 characters.
+EMBED_SIGNING_KEY=

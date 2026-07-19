@@ -93,9 +93,13 @@ prompt_token() {
 
 prompt_public_url() {
   while :; do
-    printf 'Public URL (for example, stars.example.com): ' >"$TTY_DEVICE"
+    printf 'Public URL (optional, press Enter to skip): ' >"$TTY_DEVICE"
     IFS= read -r PUBLIC_BASE_URL <"$TTY_DEVICE"
     PUBLIC_BASE_URL=$(printf '%s' "$PUBLIC_BASE_URL" | tr -d '[:space:]')
+    if [ -z "$PUBLIC_BASE_URL" ]; then
+      say "Public URL not set; generated links will use the request origin."
+      return
+    fi
     case "$PUBLIC_BASE_URL" in
       https://*) ;;
       http://*) PUBLIC_BASE_URL="https://${PUBLIC_BASE_URL#http://}" ;;
@@ -261,7 +265,13 @@ trap 'rm -rf "$TEMP_DIRECTORY"' EXIT HUP INT TERM
 
 prompt_token
 prompt_public_url
-prompt_hotlink_protection
+if [ -n "$PUBLIC_BASE_URL" ]; then
+  prompt_hotlink_protection
+else
+  EMBED_HOTLINK_PROTECTION="false"
+  EMBED_ALLOWED_HOSTS=""
+  say "Image hotlink protection is disabled because no public URL was configured."
+fi
 
 say "Downloading the latest $ARCHITECTURE release..."
 curl --fail --location --retry 3 --output "$TEMP_DIRECTORY/$ASSET" "$DOWNLOAD_BASE/$ASSET"
@@ -313,7 +323,11 @@ verify_running_service
 
 say "Meteor History $VERSION is running on port 8666."
 say "Run 'meteor-history' to open the management menu."
-say "Configure DNS and an HTTPS reverse proxy for $PUBLIC_BASE_URL if they are not already available."
+if [ -n "$PUBLIC_BASE_URL" ]; then
+  say "Configure DNS and an HTTPS reverse proxy for $PUBLIC_BASE_URL if they are not already available."
+else
+  say "No public URL was configured. The application will use each request's origin for generated links."
+fi
 if [ "$EMBED_HOTLINK_PROTECTION" = "true" ]; then
   say "Image Referers are restricted to GitHub hosts; same-origin web previews remain available."
 fi

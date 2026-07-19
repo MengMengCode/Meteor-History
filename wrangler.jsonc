@@ -1,0 +1,60 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "meteor-history",
+  "main": "./worker/index.js",
+  "compatibility_date": "2026-07-19",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "kv_namespaces": [
+    {
+      "binding": "METEOR_HISTORY_DATA"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "API_RATE_LIMITER",
+      "namespace_id": "271901",
+      "simple": {
+        "limit": 240,
+        "period": 60
+      }
+    },
+    {
+      "name": "EMBED_RATE_LIMITER",
+      "namespace_id": "271902",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    }
+  ],
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+  "vars": {
+    "PUBLIC_BASE_URL": "",
+    "CACHE_TTL_MINUTES": "360",
+    "REFRESH_INTERVAL_MINUTES": "360",
+    "GITHUB_API_VERSION": "2026-03-10",
+    "EMBED_HOTLINK_PROTECTION": "false",
+    "EMBED_ALLOWED_HOSTS": "github.com,*.githubusercontent.com,*.github.io",
+    "INCLUDE_PRIVATE_REPOSITORIES": "false"
+  },
+  "secrets": {
+    "required": ["GITHUB_TOKEN", "EMBED_SIGNING_KEY"]
+  },
+  "rules": [
+    {
+      "type": "Data",
+      "globs": ["**/*.woff"],
+      "fallthrough": true
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

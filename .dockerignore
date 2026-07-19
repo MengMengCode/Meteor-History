@@ -4,6 +4,8 @@
 .env
 .env.*
 !.env.example
+.dev.vars
+.dev.vars.*
 .vscode
 node_modules
 dist
@@ -15,4 +17,3 @@ scripts
 Dockerfile*
 compose*.yaml
 docker-compose*.yml
-
