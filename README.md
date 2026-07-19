@@ -121,7 +121,16 @@ docker compose ps
 | `TRUST_PROXY` | No | `false` | Trusts the first reverse proxy hop when enabled. |
 | `INCLUDE_PRIVATE_REPOSITORIES` | No | `false` | Includes private repository metadata and charts when enabled. |
 
-The GitHub token requires Metadata read access only for repositories that should be displayed. Repositories outside the token selection are not synchronized or shown.
+## GitHub token setup
+
+**Fine-grained token — least access, but a single owner.** A fine-grained token is scoped to **one** account or organization, so it cannot read repositories across different organizations. This is the best choice when the charts cover repositories under a single owner.
+
+1. [**Create a fine-grained token**](https://github.com/settings/personal-access-tokens/new).
+2. Set **Resource owner** to the account or organization that owns the repositories.
+3. Set **Repository access** to the repositories you want to display, or select *All repositories*.
+4. Under **Permissions → Repository permissions**, grant only **Metadata → Read-only**.
+
+Metadata read access is the only repository permission required by the stargazers endpoint. Repositories outside the token selection are not synchronized or displayed.
 
 ## Features
 

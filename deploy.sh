@@ -30,7 +30,7 @@ fi
 
 install_dependencies() {
   missing=""
-  for command_name in curl tar sha256sum awk grep od tr stty install; do
+  for command_name in curl tar sha256sum awk grep od tr install; do
     command -v "$command_name" >/dev/null 2>&1 || missing="$missing $command_name"
   done
   [ -z "$missing" ] && return
@@ -74,10 +74,7 @@ verify_glibc() {
 prompt_token() {
   while :; do
     printf 'GitHub fine-grained token: ' >"$TTY_DEVICE"
-    stty -echo <"$TTY_DEVICE"
     IFS= read -r GITHUB_TOKEN <"$TTY_DEVICE" || true
-    stty echo <"$TTY_DEVICE"
-    printf '\n' >"$TTY_DEVICE"
     if printf '%s' "$GITHUB_TOKEN" | grep -Eq '^(github_pat_|ghp_)[A-Za-z0-9_]+$'; then
       break
     fi
@@ -87,14 +84,21 @@ prompt_token() {
 
 prompt_public_url() {
   while :; do
-    printf 'Public HTTPS URL (for example, https://stars.example.com): ' >"$TTY_DEVICE"
+    printf 'Public URL (for example, stars.example.com): ' >"$TTY_DEVICE"
     IFS= read -r PUBLIC_BASE_URL <"$TTY_DEVICE"
+    PUBLIC_BASE_URL=$(printf '%s' "$PUBLIC_BASE_URL" | tr -d '[:space:]')
+    case "$PUBLIC_BASE_URL" in
+      https://*) ;;
+      http://*) PUBLIC_BASE_URL="https://${PUBLIC_BASE_URL#http://}" ;;
+      *) PUBLIC_BASE_URL="https://$PUBLIC_BASE_URL" ;;
+    esac
     PUBLIC_BASE_URL=${PUBLIC_BASE_URL%/}
     if printf '%s' "$PUBLIC_BASE_URL" | grep -Eq '^https://[A-Za-z0-9.-]+(:[0-9]+)?$' \
       && printf '%s' "${PUBLIC_BASE_URL#https://}" | grep -q '\.'; then
+      say "Using public URL: $PUBLIC_BASE_URL"
       break
     fi
-    say "The public URL must be a valid HTTPS URL without a path."
+    say "Enter a valid domain name without a path."
   done
 }
 
@@ -244,7 +248,7 @@ ARCHITECTURE=$(detect_architecture)
 ASSET="meteor-history-linux-$ARCHITECTURE.tar.gz"
 DOWNLOAD_BASE="https://github.com/$REPOSITORY/releases/latest/download"
 TEMP_DIRECTORY=$(mktemp -d)
-trap 'stty echo <"$TTY_DEVICE" 2>/dev/null || true; rm -rf "$TEMP_DIRECTORY"' EXIT HUP INT TERM
+trap 'rm -rf "$TEMP_DIRECTORY"' EXIT HUP INT TERM
 
 prompt_token
 prompt_public_url
