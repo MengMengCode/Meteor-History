@@ -1,3 +1,5 @@
+name: meteor-history
+
 services:
   meteor-history:
     image: ${METEOR_IMAGE:-ghcr.io/mengmengcode/meteor-history:latest}
@@ -19,3 +21,4 @@ services:
 
 volumes:
   meteor-history-cache:
+    name: meteor-history-cache

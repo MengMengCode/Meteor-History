@@ -60,3 +60,5 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 scripts/deploy.ps1
+scripts/release.ps1
+release.ps1

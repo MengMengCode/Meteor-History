@@ -221,6 +221,10 @@ footer > span { justify-self: end; }
 }
 .connection-status { height: 28px; padding: 0 9px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 999px; color: var(--secondary); font-size: 12px; }
 .connection-status > span { width: 6px; height: 6px; border-radius: 50%; background: #28a948; box-shadow: 0 0 0 3px color-mix(in srgb, #28a948 14%, transparent); }
+.github-profile-link { height: 36px; padding: 0 9px; display: inline-flex; align-items: center; gap: 7px; border-radius: 6px; color: var(--foreground); font-size: 11px; white-space: nowrap; }
+.github-profile-link:hover { background: var(--surface-hover); }
+.github-project-name { font-weight: 500; }
+.github-profile-link code { color: var(--muted); font-size: 10px; }
 
 .dashboard-layout {
   width: 100%;
@@ -368,6 +372,10 @@ footer > span { justify-self: end; }
   .repo-stars, .private-icon { display: none; }
   .sidebar-footer { display: none; }
   .repo-content { padding: 24px 16px; }
+}
+
+@media (max-width: 560px) {
+  .github-project-name { display: none; }
 }
 
 @media (max-width: 600px) {
