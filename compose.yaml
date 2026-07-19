@@ -1,6 +1,6 @@
 services:
   meteor-history:
-    image: ghcr.io/mengmengcode/meteor-history:latest
+    image: ${METEOR_IMAGE:-ghcr.io/mengmengcode/meteor-history:latest}
     build:
       context: .
       args:
@@ -13,10 +13,9 @@ services:
       NODE_ENV: production
       PORT: 8666
     ports:
-      - "8666:8666"
+      - "${HOST_PORT:-8666}:8666"
     volumes:
       - meteor-history-cache:/app/.cache
 
 volumes:
   meteor-history-cache:
-
