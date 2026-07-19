@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "concurrently -k \"vite\" \"node --watch server/index.js\"",
     "build": "vite build",
+    "build:pages": "vite build --config vite.pages.config.js",
+    "dev:pages": "vite --config vite.pages.config.js",
     "start": "node server/index.js",
     "cf:dev": "npm run build && wrangler dev",
     "deploy": "node scripts/deploy-cloudflare.mjs",

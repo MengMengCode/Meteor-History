@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f8f4ea" />
+    <meta name="description" content="Meteor History turns scheduled GitHub repository data into hand-drawn star charts and profile cards for your README." />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Meteor History — Draw your GitHub story" />
+    <meta property="og:description" content="Self-hosted GitHub star history charts and profile cards, drawn with personality." />
+    <meta name="twitter:card" content="summary" />
+    <title>Meteor History — Draw your GitHub story</title>
+    <link data-project-icon-link rel="icon" type="image/svg+xml" />
+    <script>document.documentElement.classList.add('js')</script>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="paper-noise" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Meteor History home">
+        <span class="brand-mark"><img data-project-icon alt="" /></span>
+        <span>Meteor History</span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="#features">Features</a>
+        <a href="#showcase">Cards</a>
+        <a href="#deploy">Deploy</a>
+      </nav>
+      <div class="header-actions">
+        <button class="theme-button" type="button" aria-label="Toggle color theme">
+          <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/></svg>
+          <svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+        </button>
+        <a class="github-button" href="https://github.com/MengMengCode/Meteor-History" target="_blank" rel="noreferrer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.22c-3.22.7-3.9-1.36-3.9-1.36-.52-1.34-1.28-1.7-1.28-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.28-5.27-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.38-5.28 5.67.42.36.79 1.06.79 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg>
+          <span>GitHub</span>
+        </a>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero section-shell">
+        <div class="hero-copy reveal">
+          <div class="eyebrow"><span></span> Self-hosted and open source</div>
+          <h1>Every star tells a story.<br /><em>Draw yours.</em></h1>
+          <p class="hero-lede">A personal GitHub repository gallery that quietly collects star history, then turns it into hand-drawn SVG charts and profile cards ready for any README.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#deploy">Deploy your own <span aria-hidden="true">→</span></a>
+            <a class="button button-paper" href="https://github.com/MengMengCode/Meteor-History" target="_blank" rel="noreferrer">Explore the source</a>
+          </div>
+          <p class="hero-note"><span class="pulse-dot"></span> Scheduled sync. No visitor-triggered GitHub requests.</p>
+          <svg class="doodle-arrow" viewBox="0 0 120 72" aria-hidden="true"><path d="M4 7c28 2 70 15 82 43M75 42l12 9 4-15"/></svg>
+        </div>
+
+        <div class="hero-visual reveal" aria-label="Hand-drawn star history chart example">
+          <div class="tape tape-one" aria-hidden="true"></div>
+          <div class="tape tape-two" aria-hidden="true"></div>
+          <div class="chart-paper">
+            <div class="chart-heading">
+              <div><strong>Star History</strong><span><i></i> your-name/your-repo</span></div>
+              <small>Updated automatically</small>
+            </div>
+            <svg class="hero-chart" viewBox="0 0 700 390" role="img" aria-label="A rising star history line chart">
+              <defs>
+                <filter id="rough-line" x="-4%" y="-4%" width="108%" height="108%"><feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="1" seed="8" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.4"/></filter>
+                <linearGradient id="chart-wash" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".18"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient>
+              </defs>
+              <g class="chart-grid"><path d="M74 38v288h586M74 270h586M74 214h586M74 158h586M74 102h586M74 46h586"/></g>
+              <path class="chart-area" d="M74 320 C105 310 113 270 135 230 S170 140 201 154 S242 126 270 130 S320 92 358 108 S408 82 449 87 S506 63 545 68 S605 35 660 43 L660 326 L74 326Z"/>
+              <path class="chart-line" filter="url(#rough-line)" pathLength="1" d="M74 320 C105 310 113 270 135 230 S170 140 201 154 S242 126 270 130 S320 92 358 108 S408 82 449 87 S506 63 545 68 S605 35 660 43"/>
+              <g class="chart-labels"><text x="48" y="330">0</text><text x="38" y="274">50</text><text x="30" y="218">100</text><text x="30" y="162">150</text><text x="30" y="106">200</text><text x="30" y="50">250</text><text x="74" y="358">Jan</text><text x="220" y="358">Apr</text><text x="370" y="358">Jul</text><text x="520" y="358">Oct</text><text x="638" y="358">Now</text></g>
+            </svg>
+            <div class="chart-footer"><span>Date</span><strong>meteor-history.com</strong></div>
+          </div>
+          <div class="scribble-note" aria-hidden="true">README-ready!</div>
+        </div>
+      </section>
+
+      <section id="features" class="section-shell feature-section">
+        <div class="section-heading reveal">
+          <div class="eyebrow"><span></span> Made for personal repositories</div>
+          <h2>Your GitHub work,<br /><em>with a little personality.</em></h2>
+          <p>Meteor History stays focused on one profile: the repositories you choose, the cards you share, and the story your stars tell over time.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card reveal">
+            <div class="feature-number">01</div>
+            <div class="feature-icon"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 38V24m10 14V12m10 26V20m10 18V7M4 41h40"/></svg></div>
+            <h3>History that keeps itself</h3>
+            <p>A background scheduler collects repository metadata and stargazer timestamps. Visitors only read the prepared cache.</p>
+            <span class="card-underline"></span>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-number">02</div>
+            <div class="feature-icon"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M7 38c6-2 7-15 14-15s7 8 12 5 5-13 9-16M37 8l6 3-3 6"/></svg></div>
+            <h3>Charts worth sharing</h3>
+            <p>Hand-drawn, clean, minimal, bold, and neon chart styles with safe URL parameters inspired by Shields.</p>
+            <span class="card-underline"></span>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-number">03</div>
+            <div class="feature-icon"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="9" width="36" height="30" rx="4"/><path d="M13 18h14M13 25h10M13 32h16M35 18v14"/></svg></div>
+            <h3>Your profile, in one card</h3>
+            <p>GitHub activity, rank, themes, colors, and layout controls in a familiar stats-card format.</p>
+            <span class="card-underline"></span>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-number">04</div>
+            <div class="feature-icon"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 5 8 12v11c0 10 6 17 16 20 10-3 16-10 16-20V12L24 5Z"/><path d="m16 24 5 5 11-12"/></svg></div>
+            <h3>Built to stay yours</h3>
+            <p>Self-host with Docker or Cloudflare Workers. Signed URLs, rate limits, hotlink controls, and protected secrets are built in.</p>
+            <span class="card-underline"></span>
+          </article>
+        </div>
+      </section>
+
+      <section id="showcase" class="showcase-section">
+        <div class="section-shell">
+          <div class="section-heading centered reveal">
+            <div class="eyebrow"><span></span> One dashboard, two shareable cards</div>
+            <h2>Make it yours.<br /><em>Copy it anywhere.</em></h2>
+            <p>Customize visually, then copy a standalone image URL or ready-to-paste Markdown without touching the server.</p>
+          </div>
+          <div class="showcase-stack">
+            <article class="browser-window showcase-chart reveal">
+              <div class="browser-bar"><div><i></i><i></i><i></i></div><span>Star Chart Studio</span><small>SVG</small></div>
+              <img data-chart-shot alt="Meteor History star chart customization dialog" />
+              <span class="image-caption">Five chart styles, safe URL parameters, automatic themes</span>
+            </article>
+            <article class="browser-window showcase-profile reveal">
+              <div class="browser-bar"><div><i></i><i></i><i></i></div><span>Profile Card Studio</span><small>SVG</small></div>
+              <img data-profile-shot alt="Meteor History GitHub profile card customization dialog" />
+              <span class="image-caption">GitHub Readme Stats-inspired, backed by your own cache</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="deploy" class="section-shell deploy-section">
+        <div class="deploy-paper reveal">
+          <svg class="orbit-doodle" viewBox="0 0 180 180" aria-hidden="true"><ellipse cx="90" cy="90" rx="76" ry="31" transform="rotate(-22 90 90)"/><ellipse cx="90" cy="90" rx="76" ry="31" transform="rotate(42 90 90)"/><circle cx="90" cy="90" r="7"/></svg>
+          <div class="deploy-copy">
+            <div class="eyebrow light"><span></span> Pick your orbit</div>
+            <h2>From zero to your own<br /><em>star history.</em></h2>
+            <p>Deploy the full app with persistent data, scheduled sync, and SVG endpoints. Your token stays on your infrastructure.</p>
+          </div>
+          <div class="deploy-options">
+            <a class="deploy-card" href="https://github.com/MengMengCode/Meteor-History#cloudflare-workers" target="_blank" rel="noreferrer">
+              <span class="deploy-badge">One click</span>
+              <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 34h25a7 7 0 0 0 0-14h-1A12 12 0 0 0 13 17a8.5 8.5 0 0 0-1 17Z"/><path d="m21 18-4 9h7l-2 8 9-12h-7l3-5"/></svg>
+              <div><strong>Cloudflare Workers</strong><small>KV storage, Cron Trigger, global edge</small></div>
+              <b>→</b>
+            </a>
+            <a class="deploy-card" href="https://github.com/MengMengCode/Meteor-History#docker-image" target="_blank" rel="noreferrer">
+              <span class="deploy-badge">Self-hosted</span>
+              <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M7 26h33c0 10-7 16-17 16S8 36 7 26Z"/><path d="M12 20h7v6h-7zm8 0h7v6h-7zm8 0h7v6h-7zm-8-7h7v6h-7zM38 20c1-4 3-6 7-6-1 4-3 6-7 6Z"/></svg>
+              <div><strong>Docker Compose</strong><small>Persistent volume, simple environment config</small></div>
+              <b>→</b>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="final-cta section-shell reveal">
+        <span class="tiny-star" aria-hidden="true">✦</span>
+        <h2>Ready to draw<br />your repository story?</h2>
+        <p>Keep the data. Shape the card. Share the history.</p>
+        <a class="button button-primary" href="https://github.com/MengMengCode/Meteor-History" target="_blank" rel="noreferrer">Start with Meteor History <span>→</span></a>
+        <svg class="circle-doodle" viewBox="0 0 360 130" aria-hidden="true"><path d="M20 72C32 8 320 0 340 61c18 55-246 84-317 32C3 78 4 50 31 31"/></svg>
+      </section>
+    </main>
+
+    <footer class="site-footer section-shell">
+      <a class="brand" href="#top"><span class="brand-mark"><img data-project-icon alt="" /></span><span>Meteor History</span></a>
+      <p>Drawn with code, powered by scheduled data.</p>
+      <div><a href="https://github.com/MengMengCode" target="_blank" rel="noreferrer">MengMengCode</a><span>·</span><a href="https://github.com/MengMengCode/Meteor-History" target="_blank" rel="noreferrer">Source</a><span>·</span><a href="https://github.com/MengMengCode/Meteor-History/tree/main?tab=readme-ov-file#" target="_blank" rel="noreferrer">Apache-2.0 License</a></div>
+    </footer>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

@@ -3,6 +3,7 @@ node_modules/
 
 # Production and tooling output
 dist/
+pages-dist/
 .vite/
 coverage/
 .nyc_output/
