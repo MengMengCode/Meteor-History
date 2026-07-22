@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { createDateTicks } from './dateTicks';
 import { monotonePath } from './monotonePath';
 
 const WIDTH = 1000;
@@ -31,9 +32,9 @@ export function HistoryChart({ points, label }) {
     const mapped = points.map((point) => ({ ...point, x: xAt(point.date), y: yAt(point.count) }));
     const dotStep = Math.max(1, Math.ceil(mapped.length / 70));
     const dots = mapped.filter((_, index) => index % dotStep === 0 || index === mapped.length - 1);
-    const dates = Array.from({ length: 5 }, (_, index) => ({
-      x: BOX.left + ((BOX.right - BOX.left) * index) / 4,
-      value: start + ((end - start) * index) / 4,
+    const dates = createDateTicks(start, end).map((tick) => ({
+      ...tick,
+      x: BOX.left + (BOX.right - BOX.left) * tick.ratio,
     }));
     return { mapped, dots, line: monotonePath(mapped), y, yAt, dates };
   }, [points]);
@@ -67,7 +68,7 @@ export function HistoryChart({ points, label }) {
         </g>)}
         {model.dates.map((tick) => <g key={tick.value}>
           <line x1={tick.x} x2={tick.x} y1={BOX.bottom} y2={BOX.bottom + 6} />
-          <text x={tick.x} y={BOX.bottom + 28} textAnchor="middle">{new Intl.DateTimeFormat('en', { year: 'numeric', month: 'short' }).format(tick.value)}</text>
+          <text x={tick.x} y={BOX.bottom + 28} textAnchor={tick.ratio === 0 ? 'start' : tick.ratio === 1 ? 'end' : 'middle'}>{tick.label}</text>
         </g>)}
       </g>
       <path d={model.line} className="xkcd-line" filter="url(#xkcdify)" />

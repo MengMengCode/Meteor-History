@@ -1,4 +1,5 @@
 import xkcdFontData from 'xkcd-font/static/xkcd-script.woff';
+import { createDateTicks } from '../src/dateTicks.js';
 import { monotonePath } from '../src/monotonePath.js';
 
 function encodeFont(value) {
@@ -97,10 +98,10 @@ export function renderHistorySvg(history, rawOptions = {}) {
   const line = monotonePath(mapped);
   const dotStep = Math.max(1, Math.ceil(mapped.length / 70));
   const dots = mapped.filter((_, index) => index % dotStep === 0 || index === mapped.length - 1);
-  const dateTicks = Array.from({ length: 5 }, (_, index) => {
-    const value = start + ((end - start) * index) / 4;
-    return { x: box.left + ((box.right - box.left) * index) / 4, label: new Intl.DateTimeFormat('en', { year: 'numeric', month: 'short', timeZone: 'UTC' }).format(value) };
-  });
+  const dateTicks = createDateTicks(start, end).map((tick) => ({
+    ...tick,
+    x: box.left + (box.right - box.left) * tick.ratio,
+  }));
   const xkcd = options.style === 'xkcd';
   const minimal = options.style === 'minimal';
   const bold = options.style === 'bold';
@@ -124,7 +125,7 @@ export function renderHistorySvg(history, rawOptions = {}) {
   ${options.showLegend ? `<g class="legend" transform="translate(32 62)"><circle class="legend-dot" r="5" fill="${colors.line}"/><text x="13" y="5" font-size="13">${escapeXml(history.fullName)}</text></g>` : ''}
   <text class="label" x="${(box.left + box.right) / 2}" y="${height - 14}" text-anchor="middle">Date</text><text class="label" transform="translate(20 ${(box.top + box.bottom) / 2}) rotate(-90)" text-anchor="middle">GitHub Stars</text>
   <g class="chart-axes" stroke="${axisStroke}" stroke-width="${axisWidth}" stroke-opacity="${axisOpacity}" fill="none"${axisFilter}><line x1="${box.left}" y1="${box.top}" x2="${box.left}" y2="${box.bottom}"/><line x1="${box.left}" y1="${box.bottom}" x2="${box.right}" y2="${box.bottom}"/>${yTicks.values.map((value) => `<line x1="${box.left - 6}" y1="${scaleY(value)}" x2="${box.left}" y2="${scaleY(value)}"/>`).join('')}${dateTicks.map((tick) => `<line x1="${tick.x}" y1="${box.bottom}" x2="${tick.x}" y2="${box.bottom + 6}"/>`).join('')}</g>
-  ${yTicks.values.map((value) => `<text class="axis" x="${box.left - 12}" y="${scaleY(value) + 4}" text-anchor="end">${compact(value)}</text>`).join('')}${dateTicks.map((tick) => `<text class="axis" x="${tick.x}" y="${box.bottom + 24}" text-anchor="middle">${tick.label}</text>`).join('')}
+  ${yTicks.values.map((value) => `<text class="axis" x="${box.left - 12}" y="${scaleY(value) + 4}" text-anchor="end">${compact(value)}</text>`).join('')}${dateTicks.map((tick) => `<text class="axis" x="${tick.x}" y="${box.bottom + 24}" text-anchor="${tick.ratio === 0 ? 'start' : tick.ratio === 1 ? 'end' : 'middle'}">${tick.label}</text>`).join('')}
   <path class="chart-series" d="${line}" fill="none" stroke="${colors.line}" stroke-width="${effectiveLineWidth}" stroke-linecap="round" stroke-linejoin="round"${lineFilter}/>
   ${options.showDots ? `<g class="dots" fill="${colors.bg}" stroke="${colors.line}" stroke-width="2"${lineFilter}>${dots.map((point) => `<circle cx="${point.x}" cy="${point.y}" r="4"/>`).join('')}</g>` : ''}
   <text class="chart-meta" x="${width - 24}" y="28" text-anchor="end" font-size="11" fill="${colors.muted}">Updated ${escapeXml(updated(history.fetchedAt))}</text><text class="chart-meta" x="${width - 24}" y="${height - 14}" text-anchor="end" font-size="12" fill="${colors.muted}">meteor-history.com</text>

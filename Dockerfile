@@ -37,7 +37,7 @@ COPY --from=build --chown=node:node /app/dist ./dist
 COPY --chown=node:node package.json package-lock.json ./
 COPY --chown=node:node public ./public
 COPY --chown=node:node server ./server
-COPY --chown=node:node src/monotonePath.js ./src/monotonePath.js
+COPY --chown=node:node src/monotonePath.js src/dateTicks.js ./src/
 
 RUN mkdir -p /app/.cache && chown node:node /app/.cache
 

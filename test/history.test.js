@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { buildDailyHistory, summarize } from '../server/history.js';
 import { normalizeSvgOptions, renderHistorySvg } from '../server/svg.js';
 import { formatServerDateTime } from '../server/time.js';
+import { createDateTicks } from '../src/dateTicks.js';
 import { monotonePath } from '../src/monotonePath.js';
 
 test('buildDailyHistory groups stars by day and keeps cumulative totals', () => {
@@ -21,6 +22,30 @@ test('buildDailyHistory groups stars by day and keeps cumulative totals', () => 
 
 test('summarize returns current total', () => {
   assert.equal(summarize([{ date: '2020-01-01', count: 2 }, { date: new Date().toISOString().slice(0, 10), count: 9 }]).current, 9);
+});
+
+test('date ticks show days for short histories instead of repeating only month and year', () => {
+  const start = Date.parse('2026-06-01');
+  const end = Date.parse('2026-07-22');
+  const labels = createDateTicks(start, end).map((tick) => tick.label);
+
+  assert.equal(labels.length, 5);
+  assert.equal(new Set(labels).size, labels.length);
+  assert.equal(labels[0], 'Jun 1, 2026');
+  assert.equal(labels.at(-1), 'Jul 22, 2026');
+});
+
+test('date ticks reduce their count when only a few dates are available', () => {
+  const labels = createDateTicks(Date.parse('2026-07-18'), Date.parse('2026-07-19')).map((tick) => tick.label);
+
+  assert.deepEqual(labels, ['Jul 18, 2026', 'Jul 19, 2026']);
+});
+
+test('date ticks use coarser labels for multi-year histories', () => {
+  const labels = createDateTicks(Date.parse('2020-01-01'), Date.parse('2026-07-22')).map((tick) => tick.label);
+
+  assert.equal(labels.length, 5);
+  assert.ok(labels.every((label) => /^[A-Z][a-z]{2} \d{4}$/.test(label)));
 });
 
 test('monotone chart curve stays within bounds when time intervals are uneven', () => {
@@ -53,6 +78,19 @@ test('SVG renderer escapes repository names and supports dark mode', () => {
   assert.match(svg, /class="dots"[^>]*>[\s\S]*r="4"/);
   assert.match(svg, />meteor-history\.com<\/text>/);
   assert.doesNotMatch(svg, /owner\/<unsafe>/);
+});
+
+test('SVG renderer includes distinct day-level labels for a short history', () => {
+  const svg = renderHistorySvg({
+    fullName: 'owner/repo',
+    fetchedAt: '2026-07-22T00:00:00Z',
+    summary: { current: 2 },
+    points: [{ date: '2026-06-01', count: 0 }, { date: '2026-07-22', count: 2 }],
+  });
+
+  assert.match(svg, />Jun 1, 2026<\/text>/);
+  assert.match(svg, />Jul 22, 2026<\/text>/);
+  assert.doesNotMatch(svg, />Jun 2026<\/text>/);
 });
 
 test('SVG renderer supports safe Shields-style chart options', () => {
