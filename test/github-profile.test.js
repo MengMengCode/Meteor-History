@@ -44,20 +44,13 @@ test('rank grading keeps GitHub Readme Stats semantics', () => {
   assert.equal(calculateRank({ commits: 10000, prs: 1000, issues: 1000, reviews: 100, stars: 10000, followers: 10000 }).level, 'S');
 });
 
-test('public star history retries without a fine-grained token that cannot access the repository', async () => {
+test('star history uses GraphQL pagination after GitHub restricted the REST stargazers endpoint', async () => {
   const requests = [];
   const client = new GitHubClient({
-    token: 'restricted-token',
+    token: 'metadata-token',
     apiVersion: '2022-11-28',
     fetchImpl: async (url, init) => {
-      const authenticated = Boolean(init.headers.Authorization);
-      requests.push({ url, authenticated });
-      if (authenticated) {
-        return new Response(JSON.stringify({ message: 'Resource not accessible by personal access token' }), {
-          status: 403,
-          headers: { 'content-type': 'application/json', 'x-ratelimit-remaining': '100' },
-        });
-      }
+      requests.push({ url, body: init.body ? JSON.parse(init.body) : null });
       if (url.endsWith('/repos/owner/repo')) {
         return Response.json({
           owner: { login: 'owner', avatar_url: 'https://example.com/avatar.png' },
@@ -66,24 +59,40 @@ test('public star history retries without a fine-grained token that cannot acces
           description: null,
           html_url: 'https://github.com/owner/repo',
           private: false,
-          stargazers_count: 1,
+          stargazers_count: 3,
           created_at: '2026-08-01T00:00:00Z',
         });
       }
-      return Response.json([{ starred_at: '2026-08-02T00:00:00Z' }], {
-        headers: { 'x-ratelimit-remaining': '58', 'x-ratelimit-reset': '1786449600' },
-      });
+      const after = JSON.parse(init.body).variables.after;
+      return Response.json({ data: {
+        rateLimit: { remaining: after ? 57 : 58, resetAt: '2026-08-11T16:00:00Z' },
+        repository: { stargazers: after ? {
+          totalCount: 3,
+          edges: [{ starredAt: '2026-08-03T00:00:00Z' }],
+          pageInfo: { hasNextPage: false, endCursor: null },
+        } : {
+          totalCount: 3,
+          edges: [{ starredAt: '2026-08-02T00:00:00Z' }, { starredAt: '2026-08-02T12:00:00Z' }],
+          pageInfo: { hasNextPage: true, endCursor: 'page-2' },
+        } },
+      } });
     },
   });
 
   const history = await client.fetchHistory('owner', 'repo');
 
-  assert.equal(history.stars, 1);
-  assert.equal(history.summary.current, 1);
-  assert.deepEqual(requests.map(({ authenticated }) => authenticated), [true, false, true, false]);
+  assert.equal(history.stars, 3);
+  assert.equal(history.summary.current, 3);
+  assert.equal(history.rateLimit.remaining, 57);
+  assert.deepEqual(requests.map(({ url }) => url), [
+    'https://api.github.com/repos/owner/repo',
+    'https://api.github.com/graphql',
+    'https://api.github.com/graphql',
+  ]);
+  assert.deepEqual(requests.slice(1).map(({ body }) => body.variables.after), [null, 'page-2']);
 });
 
-test('public repository requests retry anonymously when GitHub rejects the token with 401', async () => {
+test('public repository metadata retries anonymously when GitHub rejects the token with 401', async () => {
   const authenticated = [];
   const client = new GitHubClient({
     token: 'partially-working-token',
@@ -97,6 +106,20 @@ test('public repository requests retry anonymously when GitHub rejects the token
     },
   });
 
-  assert.equal(await client.canReadStarHistory('owner', 'repo'), true);
+  await client.publicRepositoryRequest('/repos/owner/repo');
   assert.deepEqual(authenticated, [true, false]);
+});
+
+test('private star-history probe uses GraphQL and reports forbidden repositories', async () => {
+  const client = new GitHubClient({
+    token: 'metadata-token',
+    apiVersion: '2026-03-10',
+    includePrivateRepositories: true,
+    fetchImpl: async () => Response.json({
+      data: null,
+      errors: [{ type: 'FORBIDDEN', message: 'Resource not accessible by personal access token' }],
+    }),
+  });
+
+  assert.equal(await client.canReadStarHistory('owner', 'private-repo'), false);
 });

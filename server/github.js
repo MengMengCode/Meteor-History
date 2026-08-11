@@ -73,9 +73,44 @@ export class GitHubClient {
     const body = await response.json().catch(() => ({}));
     if (!response.ok || body.errors?.length) {
       const message = body.errors?.[0]?.message || body.message || 'GitHub GraphQL request failed.';
+      const errorType = body.errors?.[0]?.type;
+      const remaining = Number(response.headers.get('x-ratelimit-remaining'));
+      const resetAt = Number(response.headers.get('x-ratelimit-reset')) * 1000;
+      if (response.status === 401) {
+        throw new GitHubError('GitHub token is invalid or expired. Update GITHUB_TOKEN.', 401, { code: 'BAD_TOKEN' });
+      }
+      if (errorType === 'RATE_LIMITED' || ((response.status === 403 || response.status === 429) && remaining === 0)) {
+        throw new GitHubError('GitHub API rate limit reached. Try again after the limit resets.', 429, { code: 'RATE_LIMITED', resetAt });
+      }
+      if (errorType === 'FORBIDDEN' || response.status === 403) {
+        throw new GitHubError('GitHub denied access to this repository\'s star history.', 403, { code: 'REPO_FORBIDDEN' });
+      }
       throw new GitHubError(message, response.ok ? 502 : response.status, { code: 'GITHUB_GRAPHQL_ERROR' });
     }
     return body.data;
+  }
+
+  async fetchStargazerPage(owner, repo, { after = null, first = 100, signal } = {}) {
+    const query = `
+      query RepositoryStarHistory($owner: String!, $repo: String!, $after: String, $first: Int!) {
+        rateLimit { remaining resetAt }
+        repository(owner: $owner, name: $repo) {
+          stargazers(first: $first, after: $after) {
+            totalCount
+            edges { starredAt }
+            pageInfo { hasNextPage endCursor }
+          }
+        }
+      }
+    `;
+    const data = await this.graphql(query, { owner, repo, after, first }, signal);
+    if (!data.repository) {
+      throw new GitHubError('Star history is unavailable for this repository. Confirm that the token owner is an administrator or collaborator.', 404, { code: 'REPO_FORBIDDEN' });
+    }
+    return {
+      connection: data.repository.stargazers,
+      rateLimit: data.rateLimit || null,
+    };
   }
 
   async listRepositories(signal) {
@@ -173,10 +208,7 @@ export class GitHubClient {
 
   async canReadStarHistory(owner, repo, signal) {
     try {
-      await this.publicRepositoryRequest(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/stargazers?per_page=1`, {
-        accept: 'application/vnd.github.star+json',
-        signal,
-      });
+      await this.fetchStargazerPage(owner, repo, { first: 1, signal });
       return true;
     } catch (error) {
       if (error instanceof GitHubError && error.details?.code === 'REPO_FORBIDDEN') return false;
@@ -189,18 +221,19 @@ export class GitHubClient {
     const stars = [];
     let remaining = null;
     let resetAt = null;
-    const pageCount = Math.ceil(metadata.stargazers_count / 100);
-    for (let page = 1; page <= Math.max(1, pageCount); page += 1) {
-      const result = await this.publicRepositoryRequest(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/stargazers?per_page=100&page=${page}`, {
-        accept: 'application/vnd.github.star+json',
-        signal,
-      });
-      stars.push(...result.data);
-      remaining = result.remaining;
-      resetAt = result.resetAt;
-      if (result.data.length < 100) break;
-    }
-    const points = buildDailyHistory(stars, metadata.created_at, metadata.stargazers_count);
+    let after = null;
+    let totalCount = metadata.stargazers_count;
+    do {
+      const result = await this.fetchStargazerPage(owner, repo, { after, signal });
+      const { connection, rateLimit } = result;
+      stars.push(...connection.edges.map((edge) => ({ starred_at: edge.starredAt })));
+      totalCount = connection.totalCount;
+      remaining = rateLimit?.remaining ?? remaining;
+      resetAt = rateLimit?.resetAt ? Date.parse(rateLimit.resetAt) : resetAt;
+      after = connection.pageInfo.hasNextPage ? connection.pageInfo.endCursor : null;
+    } while (after);
+    const currentStars = Math.max(metadata.stargazers_count, totalCount);
+    const points = buildDailyHistory(stars, metadata.created_at, currentStars);
     return {
       owner: metadata.owner.login,
       repo: metadata.name,
@@ -209,7 +242,7 @@ export class GitHubClient {
       htmlUrl: metadata.html_url,
       avatarUrl: metadata.owner.avatar_url,
       private: metadata.private,
-      stars: metadata.stargazers_count,
+      stars: currentStars,
       fetchedAt: new Date().toISOString(),
       rateLimit: { remaining, resetAt },
       points,

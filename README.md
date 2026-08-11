@@ -182,7 +182,7 @@ docker compose ps
 3. Set **Repository access** to the repositories you want to display, or select *All repositories*.
 4. Under **Permissions → Repository permissions**, grant only **Metadata → Read-only**.
 
-Metadata read access is the only repository permission required by the stargazers endpoint. Repositories outside the token selection are not synchronized or displayed.
+Metadata read access is the only repository permission required. Repositories outside the token selection are not synchronized or displayed. Since GitHub restricted the REST stargazers endpoint in July 2026, Meteor History reads timestamped star history through the authenticated GraphQL API; create the token as a repository administrator or collaborator.
 
 ## Features
 

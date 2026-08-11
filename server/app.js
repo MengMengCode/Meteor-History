@@ -147,10 +147,12 @@ export function createApp({ config, cache, sync }) {
         repository.owner.toLowerCase() === owner.toLowerCase()
         && (config.includePrivateRepositories || !repository.private)
       ));
-      if (!repositories.length) return res.status(404).type('text').send('GitHub profile is not available');
+      const cachedProfileOwner = cached?.profile?.login || '';
+      const matchesCachedProfile = cachedProfileOwner.toLowerCase() === owner.toLowerCase();
+      if (!matchesCachedProfile && !repositories.length) return res.status(404).type('text').send('GitHub profile is not available');
       if (!cached?.profileStats) return res.status(503).type('text').send('GitHub profile stats are still being prepared');
       const svg = renderProfileSvg({
-        owner: cached?.profile?.login || repositories[0].owner,
+        owner: cachedProfileOwner || repositories[0].owner,
         stats: cached?.profileStats,
         updatedAtLabel: formatServerDateTime(cached?.fetchedAt),
       }, req.query);

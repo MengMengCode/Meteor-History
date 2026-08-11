@@ -84,6 +84,22 @@ test('signed image URL works without exposing the signing key', async (t) => {
   assert.doesNotMatch(hostileTitleSvg, /<script>|<\/script>/);
 });
 
+test('profile SVG remains available from the cached profile while the repository list is empty', async (t) => {
+  const values = fixtures();
+  values.cache.getRepositories = async () => ({
+    profile: { login: 'owner', bio: 'Actual GitHub bio' },
+    profileStats: { name: 'Owner', totalStars: 1, totalCommits: 2, totalPRs: 3, totalIssues: 4, totalReviews: 1, contributedTo: 5, commitsYear: 2026, rank: { level: 'B', percentile: 55 } },
+    repositories: [],
+  });
+  const { app } = createApp(values);
+  const baseUrl = await listen(app, t);
+  const repositories = await fetch(`${baseUrl}/api/repositories`).then((response) => response.json());
+  const response = await fetch(repositories.profileCard.embedUrl);
+
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /Owner&#39;s GitHub Stats/);
+});
+
 test('image endpoint blocks unapproved Referer hosts and rate-limit abuse', async (t) => {
   const values = fixtures({ embedRateLimitPerMinute: 3 });
   const { app } = createApp(values);
