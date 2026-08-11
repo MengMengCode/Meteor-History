@@ -57,7 +57,8 @@ export class GitHubClient {
     try {
       return await this.request(path, options);
     } catch (error) {
-      if (this.includePrivateRepositories || !(error instanceof GitHubError) || error.details?.code !== 'REPO_FORBIDDEN') throw error;
+      const publicFallback = error instanceof GitHubError && ['BAD_TOKEN', 'REPO_FORBIDDEN'].includes(error.details?.code);
+      if (this.includePrivateRepositories || !publicFallback) throw error;
       return this.request(path, { ...options, anonymous: true });
     }
   }

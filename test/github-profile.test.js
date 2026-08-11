@@ -82,3 +82,21 @@ test('public star history retries without a fine-grained token that cannot acces
   assert.equal(history.summary.current, 1);
   assert.deepEqual(requests.map(({ authenticated }) => authenticated), [true, false, true, false]);
 });
+
+test('public repository requests retry anonymously when GitHub rejects the token with 401', async () => {
+  const authenticated = [];
+  const client = new GitHubClient({
+    token: 'partially-working-token',
+    apiVersion: '2022-11-28',
+    fetchImpl: async (_url, init) => {
+      const hasToken = Boolean(init.headers.Authorization);
+      authenticated.push(hasToken);
+      return hasToken
+        ? Response.json({ message: 'Bad credentials' }, { status: 401 })
+        : Response.json([]);
+    },
+  });
+
+  assert.equal(await client.canReadStarHistory('owner', 'repo'), true);
+  assert.deepEqual(authenticated, [true, false]);
+});
