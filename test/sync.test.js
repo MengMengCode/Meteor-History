@@ -39,7 +39,7 @@ test('background sync skips fresh JSON histories', async () => {
       set: async () => {},
     },
     github: {
-      listRepositories: async () => [{ owner: 'owner', repo: 'repo', fullName: 'owner/repo' }],
+      listRepositories: async () => [{ owner: 'owner', repo: 'repo', fullName: 'owner/repo', private: true }],
       fetchProfile: async () => ({ login: 'owner', bio: 'Actual GitHub bio' }),
       fetchProfileStats: async () => ({ totalStars: 1, rank: { level: 'C', percentile: 100 } }),
       canReadStarHistory: async () => true,
@@ -64,8 +64,8 @@ test('background sync excludes repositories without star-history token access', 
     },
     github: {
       listRepositories: async () => [
-        { owner: 'owner', repo: 'allowed', fullName: 'owner/allowed' },
-        { owner: 'owner', repo: 'not-selected', fullName: 'owner/not-selected' },
+        { owner: 'owner', repo: 'allowed', fullName: 'owner/allowed', private: true },
+        { owner: 'owner', repo: 'not-selected', fullName: 'owner/not-selected', private: true },
       ],
       fetchProfile: async () => ({ login: 'owner' }),
       fetchProfileStats: async () => ({ totalStars: 1, rank: { level: 'C', percentile: 100 } }),
@@ -93,7 +93,7 @@ test('background sync keeps star histories updating when optional profile stats 
       set: async (_owner, _repo, history) => writes.push(['history', history]),
     },
     github: {
-      listRepositories: async () => [{ owner: 'owner', repo: 'repo', fullName: 'owner/repo' }],
+      listRepositories: async () => [{ owner: 'owner', repo: 'repo', fullName: 'owner/repo', private: true }],
       fetchProfile: async () => ({ login: 'owner' }),
       fetchProfileStats: async () => { throw new Error('Resource not accessible by personal access token'); },
       canReadStarHistory: async () => true,
@@ -120,7 +120,7 @@ test('background sync preserves the repository index when every history access c
       setRepositories: async () => { repositoryIndexWrites += 1; },
     },
     github: {
-      listRepositories: async () => [{ owner: 'owner', repo: 'repo', fullName: 'owner/repo' }],
+      listRepositories: async () => [{ owner: 'owner', repo: 'repo', fullName: 'owner/repo', private: true }],
       fetchProfile: async () => ({ login: 'owner' }),
       fetchProfileStats: async () => null,
       canReadStarHistory: async () => false,
@@ -131,4 +131,29 @@ test('background sync preserves the repository index when every history access c
 
   await assert.rejects(sync.run(), /existing repository index was preserved/);
   assert.equal(repositoryIndexWrites, 0);
+});
+
+test('background sync indexes public repositories without spending a stargazer access probe', async () => {
+  let accessChecks = 0;
+  let indexedRepositories = [];
+  const sync = new BackgroundSync({
+    cache: {
+      getRepositories: async () => null,
+      setRepositories: async (repositories) => { indexedRepositories = repositories; },
+      get: async () => ({ stale: false }),
+    },
+    github: {
+      listRepositories: async () => [{ owner: 'owner', repo: 'public', fullName: 'owner/public', private: false }],
+      fetchProfile: async () => ({ login: 'owner' }),
+      fetchProfileStats: async () => null,
+      canReadStarHistory: async () => { accessChecks += 1; return true; },
+    },
+    intervalMs: 60_000,
+    tokenConfigured: true,
+  });
+
+  await sync.run();
+
+  assert.equal(accessChecks, 0);
+  assert.equal(indexedRepositories[0].repo, 'public');
 });

@@ -49,7 +49,7 @@ export async function runScheduledSync(env, { force = false } = {}) {
     }
     const repositories = [];
     for (const repository of repositoryCandidates) {
-      if (await github.canReadStarHistory(repository.owner, repository.repo)) repositories.push(repository);
+      if (!repository.private || await github.canReadStarHistory(repository.owner, repository.repo)) repositories.push(repository);
     }
     if (repositoryCandidates.length && !repositories.length) {
       throw new Error('GitHub denied star-history access for every repository; the existing repository index was preserved.');
