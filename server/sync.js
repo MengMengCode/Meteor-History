@@ -67,6 +67,9 @@ export class BackgroundSync {
       for (const repository of repositoryCandidates) {
         if (await this.github.canReadStarHistory(repository.owner, repository.repo)) repositories.push(repository);
       }
+      if (repositoryCandidates.length && !repositories.length) {
+        throw new Error('GitHub denied star-history access for every repository; the existing repository index was preserved.');
+      }
       await this.cache.setRepositories(repositories, profile, profileStats);
       this.state.total = repositories.length;
       this.state.phase = 'histories';

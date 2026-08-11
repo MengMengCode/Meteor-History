@@ -18,21 +18,21 @@ export class GitHubClient {
     this.includePrivateRepositories = includePrivateRepositories;
   }
 
-  headers(accept = 'application/vnd.github+json') {
+  headers(accept = 'application/vnd.github+json', authenticated = true) {
     return {
       Accept: accept,
-      Authorization: `Bearer ${this.token}`,
       'User-Agent': 'meteor-history/1.0',
       'X-GitHub-Api-Version': this.apiVersion,
+      ...(authenticated && this.token ? { Authorization: `Bearer ${this.token}` } : {}),
     };
   }
 
-  async request(path, { accept, signal } = {}) {
-    if (!this.token) {
+  async request(path, { accept, signal, anonymous = false } = {}) {
+    if (!this.token && !anonymous) {
       throw new GitHubError('GitHub token is not configured. Set GITHUB_TOKEN in .env and restart the server.', 503, { code: 'TOKEN_MISSING' });
     }
     const response = await this.fetch(`https://api.github.com${path}`, {
-      headers: this.headers(accept),
+      headers: this.headers(accept, !anonymous),
       signal,
     });
     const remaining = Number(response.headers.get('x-ratelimit-remaining'));
@@ -51,6 +51,15 @@ export class GitHubClient {
       throw new GitHubError(body.message || 'GitHub API request failed.', response.status, { code: 'GITHUB_ERROR' });
     }
     return { data: await response.json(), remaining, resetAt };
+  }
+
+  async publicRepositoryRequest(path, options = {}) {
+    try {
+      return await this.request(path, options);
+    } catch (error) {
+      if (this.includePrivateRepositories || !(error instanceof GitHubError) || error.details?.code !== 'REPO_FORBIDDEN') throw error;
+      return this.request(path, { ...options, anonymous: true });
+    }
   }
 
   async graphql(query, variables, signal) {
@@ -163,7 +172,7 @@ export class GitHubClient {
 
   async canReadStarHistory(owner, repo, signal) {
     try {
-      await this.request(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/stargazers?per_page=1`, {
+      await this.publicRepositoryRequest(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/stargazers?per_page=1`, {
         accept: 'application/vnd.github.star+json',
         signal,
       });
@@ -175,13 +184,13 @@ export class GitHubClient {
   }
 
   async fetchHistory(owner, repo, signal) {
-    const { data: metadata } = await this.request(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`, { signal });
+    const { data: metadata } = await this.publicRepositoryRequest(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`, { signal });
     const stars = [];
     let remaining = null;
     let resetAt = null;
     const pageCount = Math.ceil(metadata.stargazers_count / 100);
     for (let page = 1; page <= Math.max(1, pageCount); page += 1) {
-      const result = await this.request(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/stargazers?per_page=100&page=${page}`, {
+      const result = await this.publicRepositoryRequest(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/stargazers?per_page=100&page=${page}`, {
         accept: 'application/vnd.github.star+json',
         signal,
       });

@@ -43,3 +43,42 @@ test('rank grading keeps GitHub Readme Stats semantics', () => {
   assert.deepEqual(calculateRank({ commits: 0, prs: 0, issues: 0, reviews: 0, stars: 0, followers: 0 }), { level: 'C', percentile: 100 });
   assert.equal(calculateRank({ commits: 10000, prs: 1000, issues: 1000, reviews: 100, stars: 10000, followers: 10000 }).level, 'S');
 });
+
+test('public star history retries without a fine-grained token that cannot access the repository', async () => {
+  const requests = [];
+  const client = new GitHubClient({
+    token: 'restricted-token',
+    apiVersion: '2022-11-28',
+    fetchImpl: async (url, init) => {
+      const authenticated = Boolean(init.headers.Authorization);
+      requests.push({ url, authenticated });
+      if (authenticated) {
+        return new Response(JSON.stringify({ message: 'Resource not accessible by personal access token' }), {
+          status: 403,
+          headers: { 'content-type': 'application/json', 'x-ratelimit-remaining': '100' },
+        });
+      }
+      if (url.endsWith('/repos/owner/repo')) {
+        return Response.json({
+          owner: { login: 'owner', avatar_url: 'https://example.com/avatar.png' },
+          name: 'repo',
+          full_name: 'owner/repo',
+          description: null,
+          html_url: 'https://github.com/owner/repo',
+          private: false,
+          stargazers_count: 1,
+          created_at: '2026-08-01T00:00:00Z',
+        });
+      }
+      return Response.json([{ starred_at: '2026-08-02T00:00:00Z' }], {
+        headers: { 'x-ratelimit-remaining': '58', 'x-ratelimit-reset': '1786449600' },
+      });
+    },
+  });
+
+  const history = await client.fetchHistory('owner', 'repo');
+
+  assert.equal(history.stars, 1);
+  assert.equal(history.summary.current, 1);
+  assert.deepEqual(requests.map(({ authenticated }) => authenticated), [true, false, true, false]);
+});
