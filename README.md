@@ -117,6 +117,13 @@ docker compose up -d
 
 The application listens on port `8666`. Generated JSON is stored in the `meteor-history-cache` Docker volume.
 
+To update an existing Docker deployment, pull and recreate the container. The named cache volume is preserved:
+
+```bash
+docker compose pull
+docker compose up -d --force-recreate
+```
+
 ### Build from source
 
 Clone the repository:
@@ -217,4 +224,4 @@ Metadata read access is the only repository permission required by the stargazer
 
 
 ## Meteor-History
-[![MengMengCode/Meteor-History Star History](http://mengmeng.meteor-history.com/api/embed/MengMengCode/Meteor-History.svg?sig=LGWZiGvT-EeSUSVsQNZcmwcMQM5mlRFEDdV5fJW15x8&theme=light&style=xkcd&color=dd4528&background=ffffff&textColor=000000&width=900&height=600&lineWidth=3&showTitle=true&showLegend=true&showDots=false&v=3)](https://meteor-history.com)
+[![MengMengCode/Meteor-History Star History](https://mengmeng.meteor-history.com/api/embed/MengMengCode/Meteor-History.svg?sig=LGWZiGvT-EeSUSVsQNZcmwcMQM5mlRFEDdV5fJW15x8&theme=light&style=xkcd&color=dd4528&background=ffffff&textColor=000000&width=900&height=600&lineWidth=3&showTitle=true&showLegend=true&showDots=false&v=4)](https://meteor-history.com)

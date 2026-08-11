@@ -68,6 +68,9 @@ test('signed image URL works without exposing the signing key', async (t) => {
   assert.match(response.headers.get('content-security-policy'), /default-src 'self'/);
   assert.equal(response.headers.get('x-powered-by'), null);
   assert.equal((await fetch(body.embedUrl)).status, 200);
+  const imageResponse = await fetch(body.embedUrl);
+  assert.match(imageResponse.headers.get('cache-control'), /no-cache/);
+  assert.equal(imageResponse.headers.get('cdn-cache-control'), 'no-store');
   assert.equal((await fetch(`${baseUrl}/api/embed/owner/repo.svg`)).status, 403);
 
   const repositories = await fetch(`${baseUrl}/api/repositories`).then((value) => value.json());

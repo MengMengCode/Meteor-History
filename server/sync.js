@@ -14,6 +14,7 @@ export class BackgroundSync {
       lastCompletedAt: null,
       nextRunAt: null,
       error: null,
+      profileStatsError: null,
     };
   }
 
@@ -46,6 +47,7 @@ export class BackgroundSync {
       total: 0,
       lastStartedAt: new Date().toISOString(),
       error: null,
+      profileStatsError: null,
     };
 
     try {
@@ -53,7 +55,14 @@ export class BackgroundSync {
         this.github.listRepositories(),
         this.github.fetchProfile(),
       ]);
-      const profileStats = await this.github.fetchProfileStats(profile.login);
+      const previousIndex = await this.cache.getRepositories?.();
+      let profileStats = previousIndex?.profileStats || null;
+      try {
+        profileStats = await this.github.fetchProfileStats(profile.login);
+      } catch (error) {
+        this.state.profileStatsError = error.message;
+        console.warn(`Profile stats sync skipped: ${error.message}`);
+      }
       const repositories = [];
       for (const repository of repositoryCandidates) {
         if (await this.github.canReadStarHistory(repository.owner, repository.repo)) repositories.push(repository);

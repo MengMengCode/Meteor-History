@@ -45,7 +45,9 @@ function text(value, status = 200, headers = {}) {
 
 function svg(value) {
   return new Response(utf8Encoder.encode(value), { headers: {
-    ...commonHeaders(), 'Content-Type': 'image/svg+xml; charset=utf-8', 'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
+    ...commonHeaders(), 'Content-Type': 'image/svg+xml; charset=utf-8',
+    'Cache-Control': 'public, no-cache, max-age=0, must-revalidate',
+    'CDN-Cache-Control': 'no-store', 'Cloudflare-CDN-Cache-Control': 'no-store', Expires: '0',
     'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox", 'Cross-Origin-Resource-Policy': 'cross-origin',
   } });
 }

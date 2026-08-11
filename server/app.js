@@ -17,12 +17,14 @@ function sendSvg(res, svg, headers = {}) {
   const body = Buffer.from(svg, 'utf8');
   return res.status(200).set({
     'Content-Type': 'image/svg+xml; charset=utf-8',
-    'Content-Length': String(body.byteLength),
-    'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
+    'Cache-Control': 'public, no-cache, max-age=0, must-revalidate',
+    'CDN-Cache-Control': 'no-store',
+    'Cloudflare-CDN-Cache-Control': 'no-store',
+    Expires: '0',
     'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
     'X-Content-Type-Options': 'nosniff',
     ...headers,
-  }).end(body);
+  }).send(body);
 }
 
 export function createApp({ config, cache, sync }) {

@@ -41,6 +41,18 @@ test('date ticks reduce their count when only a few dates are available', () => 
   assert.deepEqual(labels, ['Jul 18, 2026', 'Jul 19, 2026']);
 });
 
+test('date ticks always land on whole UTC calendar days', () => {
+  const ticks = createDateTicks(Date.parse('2026-06-01'), Date.parse('2026-07-22'));
+
+  assert.deepEqual(ticks.map((tick) => new Date(tick.value).toISOString()), [
+    '2026-06-01T00:00:00.000Z',
+    '2026-06-14T00:00:00.000Z',
+    '2026-06-27T00:00:00.000Z',
+    '2026-07-09T00:00:00.000Z',
+    '2026-07-22T00:00:00.000Z',
+  ]);
+});
+
 test('date ticks use coarser labels for multi-year histories', () => {
   const labels = createDateTicks(Date.parse('2020-01-01'), Date.parse('2026-07-22')).map((tick) => tick.label);
 

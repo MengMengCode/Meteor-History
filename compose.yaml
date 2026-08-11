@@ -3,6 +3,7 @@ name: meteor-history
 services:
   meteor-history:
     image: ${METEOR_IMAGE:-ghcr.io/mengmengcode/meteor-history:latest}
+    pull_policy: always
     build:
       context: .
       args:

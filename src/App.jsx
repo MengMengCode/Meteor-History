@@ -132,7 +132,7 @@ export function App() {
       showTitle: String(chartOptions.showTitle),
       showLegend: String(chartOptions.showLegend),
       showDots: String(chartOptions.showDots),
-      v: '3',
+      v: '4',
     };
     Object.entries(query).forEach(([name, value]) => url.searchParams.set(name, value));
     return url.toString();
@@ -159,7 +159,7 @@ export function App() {
       line_height: String(profileOptions.lineHeight),
       number_format: profileOptions.numberFormat,
       rank_icon: profileOptions.rankIcon,
-      v: '3',
+      v: '4',
     };
     Object.entries(query).forEach(([name, value]) => url.searchParams.set(name, value));
     return url.toString();

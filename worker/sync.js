@@ -29,6 +29,7 @@ export async function runScheduledSync(env, { force = false } = {}) {
     lastCompletedAt: previous?.lastCompletedAt || null,
     nextRunAt: nextRun(config.refreshIntervalMs),
     error: null,
+    profileStatsError: null,
   };
   await cache.setSyncState(state);
   const github = new GitHubClient({ ...config, fetchImpl: (...args) => fetch(...args) });
@@ -38,7 +39,14 @@ export async function runScheduledSync(env, { force = false } = {}) {
       github.listRepositories(),
       github.fetchProfile(),
     ]);
-    const profileStats = await github.fetchProfileStats(profile.login);
+    const previousIndex = await cache.getRepositories();
+    let profileStats = previousIndex?.profileStats || null;
+    try {
+      profileStats = await github.fetchProfileStats(profile.login);
+    } catch (error) {
+      state.profileStatsError = error.message;
+      console.warn(`Profile stats sync skipped: ${error.message}`);
+    }
     const repositories = [];
     for (const repository of repositoryCandidates) {
       if (await github.canReadStarHistory(repository.owner, repository.repo)) repositories.push(repository);
