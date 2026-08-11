@@ -111,3 +111,24 @@ test('background sync keeps star histories updating when optional profile stats 
   assert.equal(writes[0][1], previousProfileStats);
   assert.equal(writes[1][0], 'history');
 });
+
+test('background sync preserves the repository index when every history access check fails', async () => {
+  let repositoryIndexWrites = 0;
+  const sync = new BackgroundSync({
+    cache: {
+      getRepositories: async () => ({ repositories: [{ owner: 'owner', repo: 'existing' }] }),
+      setRepositories: async () => { repositoryIndexWrites += 1; },
+    },
+    github: {
+      listRepositories: async () => [{ owner: 'owner', repo: 'repo', fullName: 'owner/repo' }],
+      fetchProfile: async () => ({ login: 'owner' }),
+      fetchProfileStats: async () => null,
+      canReadStarHistory: async () => false,
+    },
+    intervalMs: 60_000,
+    tokenConfigured: true,
+  });
+
+  await assert.rejects(sync.run(), /existing repository index was preserved/);
+  assert.equal(repositoryIndexWrites, 0);
+});
