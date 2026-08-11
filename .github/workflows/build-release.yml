@@ -142,7 +142,7 @@ jobs:
           mkdir -p "$package_root/bin" "$package_root/runtime" "$package_root/app/src" "$release_root"
           cp -L "$(command -v node)" "$package_root/runtime/node"
           cp -R server dist node_modules "$package_root/app/"
-          cp src/monotonePath.js "$package_root/app/src/"
+          cp src/monotonePath.js src/dateTicks.js "$package_root/app/src/"
           cp package.json package-lock.json "$package_root/app/"
           cp scripts/meteor-history-cli.sh "$package_root/bin/meteor-history-cli"
           printf '%s\n' "$GITHUB_REF_NAME" > "$package_root/VERSION"
