@@ -33,7 +33,7 @@ export function createDateTicks(start, end, maxCount = 5) {
   const endDay = Math.max(startDay + DAY_MS, requestedEndDay);
   const span = endDay - startDay;
   const availableDates = Math.floor(span / DAY_MS) + 1;
-  const count = Math.max(2, Math.min(maxCount, availableDates));
+  const count = availableDates <= 7 ? availableDates : Math.max(2, Math.min(maxCount, availableDates));
   const formatter = dateTickFormatter(span);
 
   return Array.from({ length: count }, (_, index) => {

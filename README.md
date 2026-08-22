@@ -145,6 +145,7 @@ Set `GITHUB_TOKEN`, `EMBED_SIGNING_KEY`, and `PUBLIC_BASE_URL` in `.env`, then b
 docker compose up -d --build
 ```
 
+
 Check the container status:
 
 ```bash
@@ -155,7 +156,7 @@ docker compose ps
 
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
-| `GITHUB_TOKEN` | Yes | None | Fine-grained GitHub token used by scheduled background synchronization. |
+| `GITHUB_TOKEN` | Yes | None | GitHub token used by scheduled background synchronization. |
 | `EMBED_SIGNING_KEY` | Yes | None | Secret used to sign image URLs. It must contain at least 32 characters. |
 | `PUBLIC_BASE_URL` | No | Request origin | Public HTTPS origin used in generated image URLs and Markdown. |
 | `CACHE_DIR` | No | `.cache` | Directory used for persistent repository and star history JSON. |
@@ -175,14 +176,16 @@ docker compose ps
 
 ## GitHub token setup
 
-**Fine-grained token — least access, but a single owner.** A fine-grained token is scoped to **one** account or organization, so it cannot read repositories across different organizations. This is the best choice when the charts cover repositories under a single owner.
+1. [**Create a token on GitHub**](https://github.com/settings/tokens).
+2. **Option A (Fine-grained Personal Access Token)**:
+   - Resource owner: your user account or organization.
+   - Repository access: *All repositories* or selected repositories.
+   - **Repository permissions**: Grant **Metadata → Read-only** AND **Contents → Read and write**.
+3. **Option B (Classic Personal Access Token)**:
+   - Grant the **`public_repo`** (or `repo`) scope.
 
-1. [**Create a fine-grained token**](https://github.com/settings/personal-access-tokens/new).
-2. Set **Resource owner** to the account or organization that owns the repositories.
-3. Set **Repository access** to the repositories you want to display, or select *All repositories*.
-4. Under **Permissions → Repository permissions**, grant only **Metadata → Read-only**.
-
-Metadata read access is the only repository permission required. Repositories outside the token selection are not synchronized or displayed. Since GitHub restricted the REST stargazers endpoint in July 2026, Meteor History reads timestamped star history through the authenticated GraphQL API; create the token as a repository administrator or collaborator.
+> [!NOTE]
+> Since GitHub restricted the stargazers API in July 2026, reading timestamped star history requires the token to have **Contents: Read and write** permissions (for fine-grained PAT) or the **`public_repo`** scope (for classic PAT), and the token owner must be a repository administrator or collaborator.
 
 ## Features
 
@@ -214,8 +217,6 @@ Metadata read access is the only repository permission required. Repositories ou
 | `/api/history/:owner/:repo` | Cached repository star history and generated share URLs. |
 | `/api/embed/:owner/:repo.svg` | Repository star history SVG image. |
 | `/api/profile/:owner.svg` | GitHub profile statistics SVG image. |
-
-
 
 ## Preview
 ![text2](image/image-2.png)

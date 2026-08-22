@@ -28,7 +28,7 @@
   "cloudflare": {
     "bindings": {
       "GITHUB_TOKEN": {
-        "description": "Create a [fine-grained GitHub token](https://github.com/settings/personal-access-tokens/new) for one resource owner with only Repository permissions > Metadata: Read-only."
+        "description": "Create a GitHub token (Fine-grained token with Metadata: Read & Contents: Read/Write, or Classic token with public_repo)."
       },
       "EMBED_SIGNING_KEY": {
         "description": "Enter a unique random string containing at least 32 characters. It signs public SVG URLs and must not be shared."

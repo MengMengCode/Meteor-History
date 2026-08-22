@@ -41,6 +41,19 @@ test('date ticks reduce their count when only a few dates are available', () => 
   assert.deepEqual(labels, ['Jul 18, 2026', 'Jul 19, 2026']);
 });
 
+test('date ticks include every day when history span is 7 days or fewer', () => {
+  const labels = createDateTicks(Date.parse('2026-08-09'), Date.parse('2026-08-14')).map((tick) => tick.label);
+
+  assert.deepEqual(labels, [
+    'Aug 9, 2026',
+    'Aug 10, 2026',
+    'Aug 11, 2026',
+    'Aug 12, 2026',
+    'Aug 13, 2026',
+    'Aug 14, 2026',
+  ]);
+});
+
 test('date ticks always land on whole UTC calendar days', () => {
   const ticks = createDateTicks(Date.parse('2026-06-01'), Date.parse('2026-07-22'));
 

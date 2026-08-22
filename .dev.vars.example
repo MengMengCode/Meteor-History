@@ -1,4 +1,4 @@
-# Fine-grained GitHub token with Metadata: Read-only access.
+# GitHub token (Fine-grained token with Metadata: Read & Contents: Read/Write, or Classic token with public_repo).
 GITHUB_TOKEN=
 
 # Generate a unique random value containing at least 32 characters.

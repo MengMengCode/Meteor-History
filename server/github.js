@@ -46,7 +46,7 @@ export class GitHubClient {
         throw new GitHubError('GitHub token is invalid or expired. Update GITHUB_TOKEN.', 401, { code: 'BAD_TOKEN' });
       }
       if (response.status === 403 || response.status === 404) {
-        throw new GitHubError('Star history is unavailable for this repository. Confirm that the token has Metadata read access.', response.status, { code: 'REPO_FORBIDDEN' });
+        throw new GitHubError('Star history is unavailable for this repository. Confirm that the token has Metadata read and Contents read/write access (or use a Classic token with public_repo scope).', response.status, { code: 'REPO_FORBIDDEN' });
       }
       throw new GitHubError(body.message || 'GitHub API request failed.', response.status, { code: 'GITHUB_ERROR' });
     }
@@ -83,7 +83,7 @@ export class GitHubClient {
         throw new GitHubError('GitHub API rate limit reached. Try again after the limit resets.', 429, { code: 'RATE_LIMITED', resetAt });
       }
       if (errorType === 'FORBIDDEN' || response.status === 403) {
-        throw new GitHubError('GitHub denied access to this repository\'s star history.', 403, { code: 'REPO_FORBIDDEN' });
+        throw new GitHubError('GitHub denied access to this repository\'s star history. Confirm that the token has Contents: Read and write permissions (or use a Classic token with public_repo scope).', 403, { code: 'REPO_FORBIDDEN' });
       }
       throw new GitHubError(message, response.ok ? 502 : response.status, { code: 'GITHUB_GRAPHQL_ERROR' });
     }

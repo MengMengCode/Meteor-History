@@ -82,12 +82,12 @@ verify_glibc() {
 
 prompt_token() {
   while :; do
-    printf 'GitHub fine-grained token: ' >"$TTY_DEVICE"
+    printf 'GitHub token (Fine-grained with Contents:write, or Classic with public_repo): ' >"$TTY_DEVICE"
     IFS= read -r GITHUB_TOKEN <"$TTY_DEVICE" || true
     if printf '%s' "$GITHUB_TOKEN" | grep -Eq '^(github_pat_|ghp_)[A-Za-z0-9_]+$'; then
       break
     fi
-    say "Enter a valid GitHub fine-grained token."
+    say "Enter a valid GitHub token (github_pat_... or ghp_...)."
   done
 }
 
